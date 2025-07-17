@@ -1,0 +1,128 @@
+[
+  {
+    "id": 1,
+    "nombre": "Peter Parker",
+    "alias": "Spider-Man",
+    "tipo": "heroe",
+    "ciudad": "Nueva York",
+    "equipo": "Los Vengadores",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 65, "defense": 35, "speed": 80 },
+    "attacks": [
+      { "name": "🕷️ Lanzamiento de Telaraña", "baseDamage": 65, "damage": 1.2, "description": "Lanza una telaraña que reduce la velocidad del oponente" },
+      { "name": "🕸️ Red de Telaraña", "baseDamage": 65, "damage": 1.5, "description": "Crea una red que atrapa al enemigo" },
+      { "name": "🦸 Sentido Arácnido", "baseDamage": 65, "damage": 1.8, "description": "Usa sus sentidos arácnidos para un ataque preciso" }
+    ]
+  },
+  {
+    "id": 2,
+    "nombre": "Tony Stark",
+    "alias": "Iron Man",
+    "tipo": "heroe",
+    "ciudad": "Nueva York",
+    "equipo": "Los Vengadores",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 75, "defense": 60, "speed": 45 },
+    "attacks": [
+      { "name": "⚡ Rayo Repulsor", "baseDamage": 75, "damage": 1.3, "description": "Dispara un rayo de energía desde su pecho" },
+      { "name": "🚀 Misil Guiado", "baseDamage": 75, "damage": 1.6, "description": "Lanza un misil que sigue al objetivo" },
+      { "name": "🛡️ Escudo de Energía", "baseDamage": 75, "damage": 1.4, "description": "Crea un escudo que refleja el daño" }
+    ]
+  },
+  {
+    "id": 3,
+    "nombre": "Bruce Wayne",
+    "alias": "Batman",
+    "tipo": "heroe",
+    "ciudad": "Gotham",
+    "equipo": "Justice League",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 70, "defense": 50, "speed": 60 },
+    "attacks": [
+      { "name": "🦇 Batarang", "baseDamage": 70, "damage": 1.2, "description": "Lanza un batarang con precisión mortal" },
+      { "name": "💥 Granada de Humo", "baseDamage": 70, "damage": 1.3, "description": "Crea una cortina de humo para confundir" },
+      { "name": "🥋 Artes Marciales", "baseDamage": 70, "damage": 1.7, "description": "Combina técnicas de combate cuerpo a cuerpo" }
+    ]
+  },
+  {
+    "id": 4,
+    "nombre": "Clark Kent",
+    "alias": "Superman",
+    "tipo": "heroe",
+    "ciudad": "Metropolis",
+    "equipo": "Justice League",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 90, "defense": 80, "speed": 70 },
+    "attacks": [
+      { "name": "👁️ Rayos X", "baseDamage": 90, "damage": 1.4, "description": "Usa su visión de rayos X para atacar" },
+      { "name": "💨 Aliento Helado", "baseDamage": 90, "damage": 1.5, "description": "Congela al oponente con su aliento" },
+      { "name": "💪 Puñetazo Súper", "baseDamage": 90, "damage": 2.0, "description": "Un puñetazo con toda su fuerza kryptoniana" }
+    ]
+  },
+  {
+    "id": 5,
+    "nombre": "Diana Prince",
+    "alias": "Wonder Woman",
+    "tipo": "heroe",
+    "ciudad": "Themyscira",
+    "equipo": "Justice League",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 85, "defense": 70, "speed": 65 },
+    "attacks": [
+      { "name": "🛡️ Escudo de Atenea", "baseDamage": 85, "damage": 1.3, "description": "Usa su escudo para bloquear y contraatacar" },
+      { "name": "⚔️ Espada de la Verdad", "baseDamage": 85, "damage": 1.6, "description": "Ataca con su espada mágica" },
+      { "name": "💫 Lazo de la Verdad", "baseDamage": 85, "damage": 1.4, "description": "Enlaza al oponente con su lazo mágico" }
+    ]
+  },
+  {
+    "id": 6,
+    "nombre": "Norman Osborn",
+    "alias": "Duende Verde",
+    "tipo": "villano",
+    "ciudad": "Nueva York",
+    "equipo": "Sinister Six",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 70, "defense": 40, "speed": 50 },
+    "attacks": [
+      { "name": "Bomba Calabaza", "baseDamage": 70, "damage": 1.4, "description": "Lanza una bomba explosiva en forma de calabaza" },
+      { "name": "Vuelo Rápido", "baseDamage": 70, "damage": 1.2, "description": "Ataca desde el aire a gran velocidad" },
+      { "name": "Ráfaga de Explosivos", "baseDamage": 70, "damage": 1.6, "description": "Lanza múltiples explosivos a la vez" }
+    ]
+  },
+  {
+    "id": 7,
+    "nombre": "Joker",
+    "alias": "Joker",
+    "tipo": "villano",
+    "ciudad": "Gotham",
+    "equipo": "Independiente",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 60, "defense": 30, "speed": 55 },
+    "attacks": [
+      { "name": "Carta Mortal", "baseDamage": 60, "damage": 1.3, "description": "Lanza una carta afilada como cuchilla" },
+      { "name": "Gas de la Risa", "baseDamage": 60, "damage": 1.2, "description": "Libera un gas que confunde al oponente" },
+      { "name": "Explosión Sorpresa", "baseDamage": 60, "damage": 1.5, "description": "Activa un explosivo oculto en un regalo" }
+    ]
+  },
+  {
+    "id": 8,
+    "nombre": "Thanos",
+    "alias": "Thanos",
+    "tipo": "villano",
+    "ciudad": "Titán",
+    "equipo": "Independiente",
+    "stats": { "health": 120, "maxHealth": 120, "attack": 95, "defense": 80, "speed": 40 },
+    "attacks": [
+      { "name": "Guantelete del Infinito", "baseDamage": 95, "damage": 1.8, "description": "Ataca usando el poder de las gemas" },
+      { "name": "Golpe Colosal", "baseDamage": 95, "damage": 1.4, "description": "Un golpe devastador con su fuerza bruta" },
+      { "name": "Rayo Cósmico", "baseDamage": 95, "damage": 2.0, "description": "Dispara un rayo de energía cósmica" }
+    ]
+  },
+  {
+    "id": 9,
+    "nombre": "Lex Luthor",
+    "alias": "Lex Luthor",
+    "tipo": "villano",
+    "ciudad": "Metropolis",
+    "equipo": "Independiente",
+    "stats": { "health": 100, "maxHealth": 100, "attack": 65, "defense": 50, "speed": 35 },
+    "attacks": [
+      { "name": "Arma de Kriptonita", "baseDamage": 65, "damage": 1.5, "description": "Dispara un rayo de kriptonita" },
+      { "name": "Plan Maestro", "baseDamage": 65, "damage": 1.2, "description": "Ejecución de un plan estratégico" },
+      { "name": "Robot de Combate", "baseDamage": 65, "damage": 1.7, "description": "Ataca usando un robot gigante" }
+    ]
+  }
+] 
