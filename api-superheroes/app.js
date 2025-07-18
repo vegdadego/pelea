@@ -60,6 +60,11 @@ const specs = swaggerJsdoc({
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
+// Redirigir la raíz '/' a la documentación Swagger
+app.get('/', (req, res) => {
+  res.redirect('/api-docs');
+});
+
 app.use('/api/auth', authController);
 app.use('/api', characterController);
 app.use('/api', battleController);
