@@ -29,50 +29,50 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *       properties:
  *         attacker:
  *           type: string
- *           description: Nombre del atacante
+ *           description: "Nombre del atacante"
  *         defender:
  *           type: string
- *           description: Nombre del defensor
+ *           description: "Nombre del defensor"
  *         attackName:
  *           type: string
- *           description: Nombre del ataque usado
+ *           description: "Nombre del ataque usado"
  *         attackDescription:
  *           type: string
- *           description: Descripción del ataque
+ *           description: "Descripción del ataque"
  *         damage:
  *           type: integer
- *           description: Daño real infligido
+ *           description: "Daño real infligido"
  *         critical:
  *           type: boolean
- *           description: Si fue un golpe crítico
+ *           description: "Si fue un golpe crítico"
  *         miss:
  *           type: boolean
- *           description: Si el ataque falló
+ *           description: "Si el ataque falló"
  *         defenderHealth:
  *           type: integer
- *           description: Vida restante del defensor
+ *           description: "Vida restante del defensor"
  *         baseDamage:
  *           type: integer
- *           description: Daño base del ataque
+ *           description: "Daño base del ataque"
  *         finalDamage:
  *           type: integer
- *           description: Daño final calculado
+ *           description: "Daño final calculado"
  *         attackType:
  *           type: string
  *           enum: [normal, especial]
- *           description: Tipo de ataque realizado
+ *           description: "Tipo de ataque realizado"
  *         isFinalAttack:
  *           type: boolean
- *           description: Si fue un ataque final
+ *           description: "Si fue un ataque final"
  *         defenderUsedShield:
  *           type: boolean
- *           description: Si el defensor usó escudo
+ *           description: "Si el defensor usó escudo"
  *     Round:
  *       type: object
  *       properties:
  *         round:
  *           type: integer
- *           description: Número del round
+ *           description: "Número del round"
  *         attacks:
  *           type: array
  *           items:
@@ -82,28 +82,28 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *       properties:
  *         id:
  *           type: integer
- *           description: ID del personaje
+ *           description: "ID del personaje"
  *         nombre:
  *           type: string
- *           description: Nombre real del personaje
+ *           description: "Nombre real del personaje"
  *         alias:
  *           type: string
- *           description: Alias del personaje
+ *           description: "Alias del personaje"
  *         tipo:
  *           type: string
- *           description: Tipo de personaje (heroe/villano)
+ *           description: "Tipo de personaje (heroe/villano)"
  *         currentHealth:
  *           type: integer
- *           description: Vida actual del personaje
+ *           description: "Vida actual del personaje"
  *         maxHealth:
  *           type: integer
- *           description: Vida máxima del personaje
+ *           description: "Vida máxima del personaje"
  *         isAlive:
  *           type: boolean
- *           description: Si el personaje está vivo
+ *           description: "Si el personaje está vivo"
  *         teamId:
  *           type: integer
- *           description: ID del equipo al que pertenece
+ *           description: "ID del equipo al que pertenece"
  *     BattleAction:
  *       type: object
  *       required:
@@ -114,72 +114,72 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *       properties:
  *         battleId:
  *           type: string
- *           description: ID de la batalla activa
+ *           description: "ID de la batalla activa"
  *         attackerId:
  *           type: integer
- *           description: ID del personaje que ataca
+ *           description: "ID del personaje que ataca"
  *         targetId:
  *           type: integer
- *           description: ID del personaje que recibe el ataque
+ *           description: "ID del personaje que recibe el ataque"
  *         attackType:
  *           type: string
  *           enum: [normal, especial]
- *           description: Tipo de ataque a realizar
+ *           description: "Tipo de ataque a realizar"
  *     AttackResult:
  *       type: object
  *       properties:
  *         attackName:
  *           type: string
- *           description: Nombre del ataque
+ *           description: "Nombre del ataque"
  *         attackDescription:
  *           type: string
- *           description: Descripción del ataque
+ *           description: "Descripción del ataque"
  *         baseDamage:
  *           type: integer
- *           description: Daño base calculado
+ *           description: "Daño base calculado"
  *         finalDamage:
  *           type: integer
- *           description: Daño final antes de defensa
+ *           description: "Daño final antes de defensa"
  *         actualDamage:
  *           type: integer
- *           description: Daño real infligido
+ *           description: "Daño real infligido"
  *         critical:
  *           type: boolean
- *           description: Si fue un golpe crítico
+ *           description: "Si fue un golpe crítico"
  *         miss:
  *           type: boolean
- *           description: Si el ataque falló
+ *           description: "Si el ataque falló"
  *     BattleState:
  *       type: object
  *       properties:
  *         currentTurn:
  *           type: integer
- *           description: Número de turno actual
+ *           description: "Número de turno actual"
  *         currentTeamTurn:
  *           type: integer
- *           description: Equipo que tiene el turno (1 o 2)
+ *           description: "Equipo que tiene el turno (1 o 2)"
  *         remainingActions:
  *           type: integer
- *           description: Acciones restantes del equipo actual en este turno
+ *           description: "Acciones restantes del equipo actual en este turno"
  *         characterStates:
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/CharacterState'
  *         isFinished:
  *           type: boolean
- *           description: Si la batalla ha terminado
+ *           description: "Si la batalla ha terminado"
  *         winner:
  *           type: string
- *           description: Ganador de la batalla
+ *           description: "Ganador de la batalla"
  *         loser:
  *           type: string
- *           description: Perdedor de la batalla
+ *           description: "Perdedor de la batalla"
  *     BattleActionResponse:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           description: Mensaje de confirmación
+ *           description: "Mensaje de confirmación"
  *         attackResult:
  *           $ref: '#/components/schemas/AttackResult'
  *         battleState:
@@ -191,61 +191,61 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *       properties:
  *         message:
  *           type: string
- *           description: Mensaje de confirmación
+ *           description: "Mensaje de confirmación"
  *         currentTeam:
  *           type: integer
- *           description: Equipo que tiene el turno actual (1 o 2)
+ *           description: "Equipo que tiene el turno actual (1 o 2)"
  *         remainingActions:
  *           type: integer
- *           description: Acciones restantes del equipo actual
+ *           description: "Acciones restantes del equipo actual"
  *         availableAttackers:
  *           type: array
- *           description: Personajes del equipo actual que pueden atacar
+ *           description: "Personajes del equipo actual que pueden atacar"
  *           items:
  *             type: object
  *             properties:
  *               id:
  *                 type: integer
- *                 description: ID del personaje
+ *                 description: "ID del personaje"
  *               alias:
  *                 type: string
- *                 description: Alias del personaje
+ *                 description: "Alias del personaje"
  *               currentHealth:
  *                 type: integer
- *                 description: Vida actual del personaje
+ *                 description: "Vida actual del personaje"
  *               isAlive:
  *                 type: boolean
- *                 description: Si el personaje está vivo
+ *                 description: "Si el personaje está vivo"
  *         availableTargets:
  *           type: array
- *           description: Personajes del equipo contrario que pueden ser atacados
+ *           description: "Personajes del equipo contrario que pueden ser atacados"
  *           items:
  *             type: object
  *             properties:
  *               id:
  *                 type: integer
- *                 description: ID del personaje
+ *                 description: "ID del personaje"
  *               alias:
  *                 type: string
- *                 description: Alias del personaje
+ *                 description: "Alias del personaje"
  *               currentHealth:
  *                 type: integer
- *                 description: Vida actual del personaje
+ *                 description: "Vida actual del personaje"
  *               isAlive:
  *                 type: boolean
- *                 description: Si el personaje está vivo
+ *                 description: "Si el personaje está vivo"
  *     Battle:
  *       type: object
  *       properties:
  *         id:
  *           type: string
- *           description: ID único de la batalla (MongoDB ObjectId)
+ *           description: "ID único de la batalla (MongoDB ObjectId)"
  *         type:
  *           type: string
- *           description: Tipo de batalla (1v1 o 3v3)
+ *           description: "Tipo de batalla (1v1 o 3v3)"
  *         char1:
  *           type: object
- *           description: Primer personaje (para batallas 1v1)
+ *           description: "Primer personaje (para batallas 1v1)"
  *           properties:
  *             id:
  *               type: integer
@@ -259,7 +259,7 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *               type: object
  *         char2:
  *           type: object
- *           description: Segundo personaje (para batallas 1v1)
+ *           description: "Segundo personaje (para batallas 1v1)"
  *           properties:
  *             id:
  *               type: integer
@@ -273,7 +273,7 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *               type: object
  *         equipo1:
  *           type: object
- *           description: Primer equipo (para batallas 3v3)
+ *           description: "Primer equipo (para batallas 3v3)"
  *           properties:
  *             id:
  *               type: integer
@@ -285,7 +285,7 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *                 type: integer
  *         equipo2:
  *           type: object
- *           description: Segundo equipo (para batallas 3v3)
+ *           description: "Segundo equipo (para batallas 3v3)"
  *           properties:
  *             id:
  *               type: integer
@@ -297,59 +297,59 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  *                 type: integer
  *         rounds:
  *           type: array
- *           description: Rounds de la batalla
+ *           description: "Rounds de la batalla"
  *           items:
  *             $ref: '#/components/schemas/Round'
  *         currentRound:
  *           type: integer
- *           description: Número del round actual
+ *           description: "Número del round actual"
  *         currentTurn:
  *           type: integer
- *           description: Número del turno actual
+ *           description: "Número del turno actual"
  *         currentTeamTurn:
  *           type: integer
- *           description: Equipo que tiene el turno actual (1 o 2)
+ *           description: "Equipo que tiene el turno actual (1 o 2)"
  *         remainingActions:
  *           type: integer
- *           description: Acciones restantes del equipo actual en este turno
+ *           description: "Acciones restantes del equipo actual en este turno"
  *         currentCharacterStates:
  *           type: array
- *           description: Estado actual de todos los personajes
+ *           description: "Estado actual de todos los personajes"
  *           items:
  *             $ref: '#/components/schemas/CharacterState'
  *         battleStatus:
  *           type: string
  *           enum: [active, finished, paused]
- *           description: Estado actual de la batalla
+ *           description: "Estado actual de la batalla"
  *         isFinished:
  *           type: boolean
- *           description: Si la batalla ha terminado
+ *           description: "Si la batalla ha terminado"
  *         winner:
  *           type: string
- *           description: Ganador de la batalla
+ *           description: "Ganador de la batalla"
  *         loser:
  *           type: string
- *           description: Perdedor de la batalla
+ *           description: "Perdedor de la batalla"
  *         startTime:
  *           type: string
  *           format: date-time
- *           description: Fecha y hora de inicio
+ *           description: "Fecha y hora de inicio"
  *         endTime:
  *           type: string
  *           format: date-time
- *           description: Fecha y hora de finalización
+ *           description: "Fecha y hora de finalización"
  *         userFinalAttackUsed:
  *           type: boolean
- *           description: Si el usuario usó su ataque final
+ *           description: "Si el usuario usó su ataque final"
  *         userShieldUsed:
  *           type: boolean
- *           description: Si el usuario usó su escudo
+ *           description: "Si el usuario usó su escudo"
  *         opponentFinalAttackUsed:
  *           type: boolean
- *           description: Si el oponente usó su ataque final
+ *           description: "Si el oponente usó su ataque final"
  *         opponentShieldUsed:
  *           type: boolean
- *           description: Si el oponente usó su escudo
+ *           description: "Si el oponente usó su escudo"
  */
 
 /**
@@ -501,11 +501,11 @@ router.get("/admin/characters", authMiddleware, async (req, res) => {
  *             properties:
  *               char1Id:
  *                 type: integer
- *                 description: ID del primer personaje
+ *                 description: "ID del primer personaje"
  *                 example: 1
  *               char2Id:
  *                 type: integer
- *                 description: ID del segundo personaje
+ *                 description: "ID del segundo personaje"
  *                 example: 2
  *     responses:
  *       201:
@@ -576,13 +576,13 @@ router.post("/battles/1v1",
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del primer personaje
+ *         description: "ID del primer personaje"
  *       - in: query
  *         name: char2Id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del segundo personaje
+ *         description: "ID del segundo personaje"
  *     responses:
  *       200:
  *         description: Batalla creada con su ID
@@ -639,21 +639,21 @@ router.get("/battles/create", async (req, res) => {
  *             properties:
  *               equipo1Id:
  *                 type: integer
- *                 description: ID del primer equipo
+ *                 description: "ID del primer equipo"
  *                 example: 1
  *               equipo2Id:
  *                 type: integer
- *                 description: ID del segundo equipo
+ *                 description: "ID del segundo equipo"
  *                 example: 2
  *               equipo1Level:
  *                 type: integer
- *                 description: Nivel de los personajes del equipo 1 (1 a 5, por defecto 1)
+ *                 description: "Nivel de los personajes del equipo 1 (1 a 5, por defecto 1)"
  *                 minimum: 1
  *                 maximum: 5
  *                 example: 3
  *               equipo2Level:
  *                 type: integer
- *                 description: Nivel de los personajes del equipo 2 (1 a 5, por defecto 1)
+ *                 description: "Nivel de los personajes del equipo 2 (1 a 5, por defecto 1)"
  *                 minimum: 1
  *                 maximum: 5
  *                 example: 2
@@ -670,7 +670,7 @@ router.get("/battles/create", async (req, res) => {
  *                   example: "Batalla entre equipos creada exitosamente"
  *                 battleId:
  *                   type: string
- *                   description: ID único de la batalla
+ *                   description: "ID único de la batalla"
  *                   example: "64f8a1b2c3d4e5f6a7b8c9d0"
  *                 equipo1:
  *                   type: object
@@ -776,17 +776,17 @@ router.post("/battles/team-vs-team", async (req, res) => {
  *             properties:
  *               battleId:
  *                 type: string
- *                 description: ID de la batalla en curso
+ *                 description: "ID de la batalla en curso"
  *               attackerId:
  *                 type: integer
- *                 description: ID del personaje activo del usuario
+ *                 description: "ID del personaje activo del usuario"
  *               attackType:
  *                 type: string
  *                 enum: [normal, especial, ultimate]
- *                 description: Tipo de ataque a realizar. La ultimate solo puede usarse una vez por personaje por combate.
+ *                 description: "Tipo de ataque a realizar. La ultimate solo puede usarse una vez por personaje por combate."
  *               targetId:
  *                 type: integer
- *                 description: (Opcional) ID del personaje enemigo al que se quiere atacar. Si no se especifica, se ataca al personaje activo enemigo.
+ *                 description: "(Opcional) ID del personaje enemigo al que se quiere atacar. Si no se especifica, se ataca al personaje activo enemigo."
  *     responses:
  *       200:
  *         description: Resumen del turno del jugador y del enemigo, y estado del combate
@@ -797,22 +797,22 @@ router.post("/battles/team-vs-team", async (req, res) => {
  *               properties:
  *                 turnoJugador:
  *                   type: string
- *                   description: Resumen del ataque del jugador (nombre del ataque, tipo, daño, mitigación, HP restante del enemigo)
+ *                   description: "Resumen del ataque del jugador (nombre del ataque, tipo, daño, mitigación, HP restante del enemigo)"
  *                 turnoEnemigo:
  *                   type: string
- *                   description: Resumen del ataque automático del enemigo
+ *                   description: "Resumen del ataque automático del enemigo"
  *                 estadoCombate:
  *                   type: string
  *                   enum: [En curso, Finalizado]
- *                   description: Estado actual del combate
+ *                   description: "Estado actual del combate"
  *                 siguienteTurno:
  *                   type: string
  *                   enum: [jugador, null]
- *                   description: Indica si el siguiente turno es del jugador o si la batalla terminó
+ *                   description: "Indica si el siguiente turno es del jugador o si la batalla terminó"
  *                 ganador:
  *                   type: string
  *                   nullable: true
- *                   description: Nombre del ganador si la batalla terminó
+ *                   description: "Nombre del ganador si la batalla terminó"
  *       400:
  *         description: Error de validación o de reglas de combate
  *         content:
@@ -884,7 +884,7 @@ router.post('/battles/action', async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de la batalla
+ *         description: "ID de la batalla"
  *         example: "64f8a1b2c3d4e5f6a7b8c9d0"
  *     responses:
  *       200:
@@ -949,7 +949,7 @@ router.get('/battles/:battleId/state', async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de la batalla
+ *         description: "ID de la batalla"
  *     requestBody:
  *       required: true
  *       content:
@@ -960,19 +960,16 @@ router.get('/battles/:battleId/state', async (req, res) => {
  *               attackType:
  *                 type: string
  *                 enum: [normal, especial]
- *                 description: Tipo de ataque a usar
+ *                 description: "Tipo de ataque a usar"
  *               useShield:
  *                 type: boolean
- *                 description: Si es true, el personaje usará su escudo (reduce daño, solo una vez por batalla)
+ *                 description: "Si es true, el personaje usará su escudo (reduce daño, solo una vez por batalla)"
  *               nivel:
  *                 type: integer
- *                 description: Nivel de poder del usuario (opcional, afecta el daño: daño = base * (1 + 0.1 * (nivel-1)))
+ *                 description: "Nivel de poder del usuario (opcional, afecta el daño: daño = base * (1 + 0.1 * (nivel-1)))"
  *               target:
  *                 type: string
- *                 description: |
- *                   Alias o id del objetivo del ataque.
- *                   - En 1v1 es opcional (por defecto ataca al oponente).
- *                   - En 3v3 es obligatorio (debe ser un enemigo vivo del equipo contrario).
+ *                 description: "| Alias o id del objetivo del ataque. - En 1v1 es opcional (por defecto ataca al oponente). - En 3v3 es obligatorio (debe ser un enemigo vivo del equipo contrario)."
  *           example:
  *             attackType: especial
  *             useShield: false
@@ -988,10 +985,10 @@ router.get('/battles/:battleId/state', async (req, res) => {
  *               properties:
  *                 turno:
  *                   type: string
- *                   description: De quién fue el turno ('usuario' o 'ia')
+ *                   description: "De quién fue el turno ('usuario' o 'ia')"
  *                 acciones:
  *                   type: array
- *                   description: Acciones realizadas en el turno
+ *                   description: "Acciones realizadas en el turno"
  *                   items:
  *                     type: object
  *                     properties:
@@ -1011,13 +1008,13 @@ router.get('/battles/:battleId/state', async (req, res) => {
  *                         type: integer
  *                 estado:
  *                   type: object
- *                   description: Estado actualizado de los personajes (1v1) o equipos (3v3), incluyendo nivel
+ *                   description: "Estado actualizado de los personajes (1v1) o equipos (3v3), incluyendo nivel"
  *                 isFinished:
  *                   type: boolean
- *                   description: Si la batalla terminó
+ *                   description: "Si la batalla terminó"
  *                 winner:
  *                   type: string
- *                   description: Ganador si la batalla terminó
+ *                   description: "Ganador si la batalla terminó"
  *             examples:
  *               1v1:
  *                 value:
@@ -1128,16 +1125,16 @@ router.post("/battles/:id/round", async (req, res) => {
  *               properties:
  *                 battleId:
  *                   type: string
- *                   description: ID de la batalla
+ *                   description: "ID de la batalla"
  *                 round:
  *                   type: integer
- *                   description: Número de round
+ *                   description: "Número de round"
  *                 atacante:
  *                   type: string
- *                   description: Alias del atacante
+ *                   description: "Alias del atacante"
  *                 defensor:
  *                   type: string
- *                   description: Alias del defensor
+ *                   description: "Alias del defensor"
  *                 attacks:
  *                   type: array
  *                   items:
@@ -1169,10 +1166,10 @@ router.post("/battles/:id/round", async (req, res) => {
  *                         type: boolean
  *                 isFinished:
  *                   type: boolean
- *                   description: Si la batalla terminó
+ *                   description: "Si la batalla terminó"
  *                 winner:
  *                   type: string
- *                   description: Ganador si la batalla terminó
+ *                   description: "Ganador si la batalla terminó"
  *       400:
  *         description: Error en la simulación
  *       500:
@@ -1193,7 +1190,7 @@ router.post("/battles/:id/round", async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de la batalla (debe ser una batalla 1v1)
+ *         description: "ID de la batalla (debe ser una batalla 1v1)"
  *         example: "64f8a1b2c3d4e5f6a7b8c9d0"
  *     responses:
  *       200:
@@ -1257,7 +1254,7 @@ router.post("/battles/:id/simulate", async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de la batalla
+ *         description: "ID de la batalla"
  *         example: "64f8a1b2c3d4e5f6a7b8c9d0"
  *     responses:
  *       200:
@@ -1310,7 +1307,7 @@ router.get("/battles/:id", async (req, res) => {
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del personaje
+ *         description: "ID del personaje"
  *         example: 1
  *     responses:
  *       200:
@@ -1500,7 +1497,7 @@ router.get("/battles/characters/:id/attacks", async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de la batalla
+ *         description: "ID de la batalla"
  *         example: "64f8a1b2c3d4e5f6a7b8c9d0"
  *     responses:
  *       200:
