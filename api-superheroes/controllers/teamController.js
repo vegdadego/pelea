@@ -3,6 +3,7 @@ import { check, validationResult } from 'express-validator';
 import characterRepository from '../repositories/characterRepository.js';
 import teamRepository from '../repositories/teamRepository.js';
 import authMiddleware, { isAdmin } from '../middleware/authMiddleware.js';
+import Team from '../models/teamModel.js';
 
 const router = express.Router();
 
@@ -58,12 +59,14 @@ async function expandTeam(team) {
 // Obtener todos los equipos (solo los del usuario, excepto admin)
 router.get('/equipos', authMiddleware, async (req, res) => {
     const user = req.user;
-    const teams = await teamRepository.getTeams();
-    let filtered = teams;
-    if (!isAdmin(user)) {
-        filtered = teams.filter(t => t.userId === user.userId);
+    let teams;
+    if (isAdmin(user)) {
+        teams = await Team.find();
+    } else {
+        teams = await Team.find({ userId: user._id || user.userId });
     }
-    const expanded = await Promise.all(filtered.map(expandTeam));
+    // Expandir miembros si es necesario (puedes mantener expandTeam si quieres mostrar info de personajes)
+    const expanded = await Promise.all(teams.map(expandTeam));
     res.json(expanded);
 });
 
@@ -88,10 +91,14 @@ router.get('/equipos', authMiddleware, async (req, res) => {
 // Obtener un equipo por ID (solo si es del usuario o admin)
 router.get('/equipos/:id', authMiddleware, async (req, res) => {
     const user = req.user;
-    const teams = await teamRepository.getTeams();
-    const equipo = teams.find(t => t.id === parseInt(req.params.id));
+    let equipo;
+    try {
+        equipo = await Team.findById(req.params.id);
+    } catch {
+        return res.status(404).json({ error: 'Equipo no encontrado' });
+    }
     if (!equipo) return res.status(404).json({ error: 'Equipo no encontrado' });
-    if (!isAdmin(user) && equipo.userId !== user.userId) {
+    if (!isAdmin(user) && equipo.userId.toString() !== (user._id || user.userId).toString()) {
         return res.status(403).json({ error: 'Acceso denegado. Solo puedes ver tus propios equipos.' });
     }
     const expanded = await expandTeam(equipo);
@@ -141,12 +148,18 @@ router.post('/equipos',
                 return res.status(400).json({ error: `El personaje con ID ${id} no existe` });
             }
         }
-        const teams = await teamRepository.getTeams();
-        const newId = teams.length > 0 ? Math.max(...teams.map(t => t.id)) + 1 : 1;
-        const equipo = { id: newId, nombre: req.body.nombre, miembros: req.body.miembros, userId: user.userId };
-        teams.push(equipo);
-        await teamRepository.saveTeams(teams);
-        res.status(201).json(equipo);
+        // Guardar en MongoDB
+        try {
+            const equipo = new Team({
+                nombre: req.body.nombre,
+                miembros: req.body.miembros,
+                userId: user._id || user.userId
+            });
+            await equipo.save();
+            res.status(201).json(equipo);
+        } catch (err) {
+            res.status(500).json({ error: 'Error al guardar el equipo en la base de datos', details: err.message });
+        }
     }
 );
 
@@ -188,10 +201,14 @@ router.put('/equipos/:id',
     ],
     async (req, res) => {
         const user = req.user;
-        const teams = await teamRepository.getTeams();
-        const equipo = teams.find(t => t.id === parseInt(req.params.id));
+        let equipo;
+        try {
+            equipo = await Team.findById(req.params.id);
+        } catch {
+            return res.status(404).json({ error: 'Equipo no encontrado' });
+        }
         if (!equipo) return res.status(404).json({ error: 'Equipo no encontrado' });
-        if (!isAdmin(user) && equipo.userId !== user.userId) {
+        if (!isAdmin(user) && equipo.userId.toString() !== (user._id || user.userId).toString()) {
             return res.status(403).json({ error: 'Acceso denegado. Solo puedes modificar tus propios equipos.' });
         }
         const errors = validationResult(req);
@@ -207,7 +224,7 @@ router.put('/equipos/:id',
         }
         equipo.nombre = req.body.nombre;
         equipo.miembros = req.body.miembros;
-        await teamRepository.saveTeams(teams);
+        await equipo.save();
         res.json(equipo);
     }
 );
@@ -237,15 +254,17 @@ router.put('/equipos/:id',
 // Eliminar equipo (solo si es del usuario o admin)
 router.delete('/equipos/:id', authMiddleware, async (req, res) => {
     const user = req.user;
-    const teams = await teamRepository.getTeams();
-    const index = teams.findIndex(t => t.id === parseInt(req.params.id));
-    if (index === -1) return res.status(404).json({ error: 'Equipo no encontrado' });
-    const equipo = teams[index];
-    if (!isAdmin(user) && equipo.userId !== user.userId) {
+    let equipo;
+    try {
+        equipo = await Team.findById(req.params.id);
+    } catch {
+        return res.status(404).json({ error: 'Equipo no encontrado' });
+    }
+    if (!equipo) return res.status(404).json({ error: 'Equipo no encontrado' });
+    if (!isAdmin(user) && equipo.userId.toString() !== (user._id || user.userId).toString()) {
         return res.status(403).json({ error: 'Acceso denegado. Solo puedes eliminar tus propios equipos.' });
     }
-    teams.splice(index, 1);
-    await teamRepository.saveTeams(teams);
+    await equipo.deleteOne();
     res.json({ message: 'Equipo eliminado' });
 });
 
