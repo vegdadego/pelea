@@ -7,12 +7,21 @@ import Team from '../models/teamModel.js';
 
 const router = express.Router();
 
-// Función para expandir los miembros de un equipo con info completa
+// Función para expandir los miembros de un equipo con info completa y mapear _id a id
+function mapTeamId(team) {
+    if (!team) return team;
+    const obj = team.toObject ? team.toObject() : team;
+    obj.id = obj._id;
+    delete obj._id;
+    return obj;
+}
+
 async function expandTeam(team) {
     const personajes = await characterRepository.getCharacters();
+    const mapped = mapTeamId(team);
     return {
-        ...team,
-        miembros: team.miembros.map(id => {
+        ...mapped,
+        miembros: mapped.miembros.map(id => {
             const p = personajes.find(p => p.id === id);
             return p ? {
                 id: p.id,
@@ -65,7 +74,6 @@ router.get('/equipos', authMiddleware, async (req, res) => {
     } else {
         teams = await Team.find({ userId: user._id || user.userId });
     }
-    // Expandir miembros si es necesario (puedes mantener expandTeam si quieres mostrar info de personajes)
     const expanded = await Promise.all(teams.map(expandTeam));
     res.json(expanded);
 });
@@ -93,7 +101,7 @@ router.get('/equipos/:id', authMiddleware, async (req, res) => {
     const user = req.user;
     let equipo;
     try {
-        equipo = await Team.findById(req.params.id);
+        equipo = await Team.findOne({ id: parseInt(req.params.id) });
     } catch {
         return res.status(404).json({ error: 'Equipo no encontrado' });
     }
@@ -148,9 +156,12 @@ router.post('/equipos',
                 return res.status(400).json({ error: `El personaje con ID ${id} no existe` });
             }
         }
-        // Guardar en MongoDB
+        // Guardar en MongoDB con id incremental
         try {
+            const lastTeam = await Team.findOne().sort({ id: -1 });
+            const nextId = lastTeam && lastTeam.id ? lastTeam.id + 1 : 1;
             const equipo = new Team({
+                id: nextId,
                 nombre: req.body.nombre,
                 miembros: req.body.miembros,
                 userId: user._id || user.userId
@@ -203,7 +214,7 @@ router.put('/equipos/:id',
         const user = req.user;
         let equipo;
         try {
-            equipo = await Team.findById(req.params.id);
+            equipo = await Team.findOne({ id: parseInt(req.params.id) });
         } catch {
             return res.status(404).json({ error: 'Equipo no encontrado' });
         }
@@ -256,7 +267,7 @@ router.delete('/equipos/:id', authMiddleware, async (req, res) => {
     const user = req.user;
     let equipo;
     try {
-        equipo = await Team.findById(req.params.id);
+        equipo = await Team.findOne({ id: parseInt(req.params.id) });
     } catch {
         return res.status(404).json({ error: 'Equipo no encontrado' });
     }
