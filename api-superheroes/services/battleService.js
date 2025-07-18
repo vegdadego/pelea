@@ -1,11 +1,10 @@
 import Character from '../models/characterModel.js';
-import characterRepository from '../repositories/characterRepository.js';
+import Team from '../models/teamModel.js';
 import Battle from '../models/battleModel.js';
-import teamRepository from '../repositories/teamRepository.js';
 
 class BattleService {
     async createBattle(char1Id, char2Id, userId) {
-        const characters = await characterRepository.getCharacters();
+        const characters = await Character.find({ id: { $in: [parseInt(char1Id), parseInt(char2Id)] } });
         const char1 = characters.find(c => c.id === parseInt(char1Id));
         const char2 = characters.find(c => c.id === parseInt(char2Id));
         if (!char1 || !char2) throw new Error('Uno o ambos personajes no encontrados');
@@ -38,14 +37,13 @@ class BattleService {
     }
 
     async createBattle3v3(equipo1Id, equipo2Id, userId) {
-        const allTeams = await teamRepository.getTeams();
-        const equipo1 = allTeams.find(t => t.id === equipo1Id);
-        const equipo2 = allTeams.find(t => t.id === equipo2Id);
+        const equipo1 = await Team.findOne({ id: equipo1Id });
+        const equipo2 = await Team.findOne({ id: equipo2Id });
         if (!equipo1 || !equipo2) throw new Error('Uno o ambos equipos no existen');
         if (!Array.isArray(equipo1.miembros) || !Array.isArray(equipo2.miembros) || equipo1.miembros.length !== 3 || equipo2.miembros.length !== 3) {
             throw new Error('Ambos equipos deben tener exactamente 3 miembros');
         }
-        const personajes = await characterRepository.getCharacters();
+        const personajes = await Character.find({ id: { $in: [...equipo1.miembros, ...equipo2.miembros] } });
         const getCharState = (char) => ({
             id: char.id,
             nombre: char.nombre,
@@ -291,16 +289,15 @@ class BattleService {
      * Crea una nueva batalla entre equipos sin simular automáticamente
      */
     async createTeamBattle(equipo1Id, equipo2Id, userId, equipo1Level = 1, equipo2Level = 1) {
-        const characters = await characterRepository.getCharacters();
-        const allTeams = await (await import('../repositories/teamRepository.js')).default.getTeams();
-        const equipo1 = allTeams.find(t => t.id === equipo1Id);
-        const equipo2 = allTeams.find(t => t.id === equipo2Id);
+        const equipo1 = await Team.findOne({ id: equipo1Id });
+        const equipo2 = await Team.findOne({ id: equipo2Id });
         if (!equipo1 || !equipo2) throw new Error('Uno o ambos equipos no existen');
         if (!Array.isArray(equipo1.miembros) || !Array.isArray(equipo2.miembros) || equipo1.miembros.length !== 3 || equipo2.miembros.length !== 3) throw new Error('Ambos equipos deben tener exactamente 3 miembros');
         // Crear estados iniciales de los personajes con stats completos
+        const personajes = await Character.find({ id: { $in: [...equipo1.miembros, ...equipo2.miembros] } });
         const characterStates = [];
         for (const charId of [...equipo1.miembros, ...equipo2.miembros]) {
-            const char = characters.find(c => c.id === charId);
+            const char = personajes.find(c => c.id === charId);
             // Determinar el ID numérico del equipo al que pertenece el personaje
             const teamId = equipo1.miembros.includes(charId) ? equipo1.id : equipo2.id;
             characterStates.push({
@@ -315,7 +312,6 @@ class BattleService {
                 specialDefense: char.stats.specialDefense || char.stats.defense,
                 isAlive: true,
                 teamId: teamId,
-                // Copiar los ataques del personaje
                 attacks: char.attacks || []
             });
         }

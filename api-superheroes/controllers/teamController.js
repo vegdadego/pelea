@@ -1,9 +1,9 @@
 import express from 'express';
 import { check, validationResult } from 'express-validator';
-import characterRepository from '../repositories/characterRepository.js';
 import teamRepository from '../repositories/teamRepository.js';
 import authMiddleware, { isAdmin } from '../middleware/authMiddleware.js';
 import Team from '../models/teamModel.js';
+import Character from '../models/characterModel.js';
 
 const router = express.Router();
 
@@ -17,7 +17,8 @@ function mapTeamId(team) {
 }
 
 async function expandTeam(team) {
-    const personajes = await characterRepository.getCharacters();
+    // Consultar personajes desde MongoDB
+    const personajes = await Character.find({ id: { $in: team.miembros } });
     const mapped = mapTeamId(team);
     return {
         ...mapped,
@@ -150,7 +151,7 @@ router.post('/equipos',
             return res.status(400).json({ error: errors.array() });
         }
         // Validar que los personajes existen
-        const personajes = await characterRepository.getCharacters();
+        const personajes = await Character.find({ id: { $in: req.body.miembros } });
         for (const id of req.body.miembros) {
             if (!personajes.find(p => p.id === id)) {
                 return res.status(400).json({ error: `El personaje con ID ${id} no existe` });
@@ -227,7 +228,7 @@ router.put('/equipos/:id',
             return res.status(400).json({ error: errors.array() });
         }
         // Validar que los personajes existen
-        const personajes = await characterRepository.getCharacters();
+        const personajes = await Character.find({ id: { $in: req.body.miembros } });
         for (const id of req.body.miembros) {
             if (!personajes.find(p => p.id === id)) {
                 return res.status(400).json({ error: `El personaje con ID ${id} no existe` });
