@@ -293,106 +293,51 @@ class BattleService {
     async createTeamBattle(equipo1Id, equipo2Id, userId, equipo1Level = 1, equipo2Level = 1) {
         const characters = await characterRepository.getCharacters();
         const allTeams = await (await import('../repositories/teamRepository.js')).default.getTeams();
-        
         const equipo1 = allTeams.find(t => t.id === equipo1Id);
         const equipo2 = allTeams.find(t => t.id === equipo2Id);
-        
-        if (!equipo1 || !equipo2) {
-            throw new Error('Uno o ambos equipos no existen');
-        }
-        
-        if (!Array.isArray(equipo1.miembros) || !Array.isArray(equipo2.miembros) || 
-            equipo1.miembros.length !== 3 || equipo2.miembros.length !== 3) {
-            throw new Error('Ambos equipos deben tener exactamente 3 miembros');
-        }
-
-        // Verificar que todos los personajes existan
-        for (const id of [...equipo1.miembros, ...equipo2.miembros]) {
-            if (!characters.find(p => p.id === id)) {
-                throw new Error(`El personaje con ID ${id} no existe`);
-            }
-        }
-
-        // Crear estados iniciales de los personajes con niveles aplicados
+        if (!equipo1 || !equipo2) throw new Error('Uno o ambos equipos no existen');
+        if (!Array.isArray(equipo1.miembros) || !Array.isArray(equipo2.miembros) || equipo1.miembros.length !== 3 || equipo2.miembros.length !== 3) throw new Error('Ambos equipos deben tener exactamente 3 miembros');
+        // Crear estados iniciales de los personajes con stats completos
         const characterStates = [];
-        
-        // Agregar personajes del equipo1con nivel aplicado
-        for (const charId of equipo1.miembros) {
+        for (const charId of [...equipo1.miembros, ...equipo2.miembros]) {
             const char = characters.find(c => c.id === charId);
-            const charWithLevel = new Character(
-                char.id,
-                char.nombre,
-                char.alias,
-                char.tipo,
-                char.ciudad,
-                char.equipo,
-                char.stats,
-                equipo1Level
-            );
+            // Determinar el ID numérico del equipo al que pertenece el personaje
+            const teamId = equipo1.miembros.includes(charId) ? equipo1.id : equipo2.id;
             characterStates.push({
                 id: char.id,
                 nombre: char.nombre,
                 alias: char.alias,
-                tipo: char.tipo,
-                currentHealth: charWithLevel.stats.health,
-                maxHealth: charWithLevel.stats.health,
+                currentHealth: char.stats.health,
+                maxHealth: char.stats.health,
+                attack: char.stats.attack,
+                defense: char.stats.defense,
+                specialAttack: char.stats.specialAttack || char.stats.attack,
+                specialDefense: char.stats.specialDefense || char.stats.defense,
                 isAlive: true,
-                teamId: equipo1Id,
-                level: equipo1Level
+                teamId: teamId,
+                // Copiar los ataques del personaje
+                attacks: char.attacks || []
             });
         }
-        
-        // Agregar personajes del equipo2con nivel aplicado
-        for (const charId of equipo2.miembros) {
-            const char = characters.find(c => c.id === charId);
-            const charWithLevel = new Character(
-                char.id,
-                char.nombre,
-                char.alias,
-                char.tipo,
-                char.ciudad,
-                char.equipo,
-                char.stats,
-                equipo2Level
-            );
-            characterStates.push({
-                id: char.id,
-                nombre: char.nombre,
-                alias: char.alias,
-                tipo: char.tipo,
-                currentHealth: charWithLevel.stats.health,
-                maxHealth: charWithLevel.stats.health,
-                isAlive: true,
-                teamId: equipo2Id,
-                level: equipo2Level
-            });
-        }
-
+        // Inicializar batalla con el primer personaje de cada equipo como activo
         const battleDoc = new Battle({
             userId,
             type: '3v3',
-            equipo1: {
-                id: equipo1Id,
-                nombre: equipo1.nombre,
-                miembros: equipo1.miembros
-            },
-            equipo2: {
-                id: equipo2Id,
-                nombre: equipo2.nombre,
-                miembros: equipo2.miembros
-            },
-            rounds: [],
-            currentRound: 0,
-            isFinished: false,
-            battleStatus: 'active',
+            equipo1: { id: equipo1Id, nombre: equipo1.nombre, miembros: equipo1.miembros },
+            equipo2: { id: equipo2Id, nombre: equipo2.nombre, miembros: equipo2.miembros },
             currentCharacterStates: characterStates,
-            currentTurn: 1,
-            currentTeamTurn: 1,
-            remainingActions: 3, // Cada equipo tiene 3 acciones por turno
+            activeIndex1: 0,
+            activeIndex2: 0,
+            active1: equipo1.miembros[0],
+            active2: equipo2.miembros[0],
+            turnoActual: 'jugador',
+            isFinished: false,
+            winner: '',
+            logs: [],
+            currentRound: 1,
             startTime: new Date(),
-            alreadyAttacked: [] // Inicializar la lista de atacantes
+            battleStatus: 'active'
         });
-
         await battleDoc.save();
         return battleDoc;
     }
@@ -400,182 +345,136 @@ class BattleService {
     /**
      * Ejecuta una acción de pelea en una batalla existente
      */
-    async executeBattleAction(battleId, userId, { attackerId, targetId, attackType }) {
-        const battle = await Battle.findOne({ _id: battleId, userId });
-        if (!battle) {
-            throw new Error('Batalla no encontrada');
-        }
-
-        if (battle.isFinished || battle.battleStatus !== 'active') {
-            throw new Error('La batalla ya ha terminado o no está activa');
-        }
-
-        // Validar que el atacante pertenezca a uno de los equipos
-        const attackerState = battle.currentCharacterStates.find(c => c.id === attackerId);
-        if (!attackerState) {
-            throw new Error('El atacante no existe en esta batalla');
-        }
-
-        if (!attackerState.isAlive) {
-            throw new Error('El atacante está derrotado y no puede atacar');
-        }
-
-        // Validar que el objetivo pertenezca al equipo contrario
-        const targetState = battle.currentCharacterStates.find(c => c.id === targetId);
-        if (!targetState) {
-            throw new Error('El objetivo no existe en esta batalla');
-        }
-
-        if (!targetState.isAlive) {
-            throw new Error('El objetivo ya está derrotado');
-        }
-
-        if (attackerState.teamId === targetState.teamId) {
-            throw new Error('No puedes atacar a un miembro de tu propio equipo');
-        }
-
-        // Validar que sea el turno del equipo del atacante
-        const attackerTeamId = attackerState.teamId;
-        const expectedTeamId = battle.equipo1.id === attackerTeamId ? battle.equipo1.id : battle.equipo2.id;
+    async executeBattleAction(battleId, userId, { attackerId, attackType, targetId }) {
+        const battle = await Battle.findById(battleId);
+        if (!battle || battle.isFinished) throw new Error('Batalla no encontrada o ya finalizada');
+        if (battle.turnoActual !== 'jugador') throw new Error('No es el turno del jugador');
+        // Obtener personajes activos
+        const activeChar1 = battle.currentCharacterStates.find(c => c.id === battle.active1 && c.isAlive);
+        // Permitir seleccionar objetivo
+        let targetCharId = targetId ? Number(targetId) : battle.active2;
+        const targetChar = battle.currentCharacterStates.find(c => c.id === targetCharId && c.isAlive);
+        if (!activeChar1 || !targetChar) throw new Error('No hay personajes activos disponibles o el objetivo está derrotado');
+        if (attackerId !== activeChar1.id) throw new Error('Solo el personaje activo del jugador puede atacar');
+        // --- ATAQUE DEL JUGADOR ---
+        let ataqueJugador, mitigacionJugador, hpRestanteEnemigo, mensajeJugador, nombreAtaque = 'Ataque Básico', descAtaque = '';
+        // Selección de ataque según tipo
+        let ataqueIdx = 0;
+        if (attackType === 'normal') ataqueIdx = 0;
+        else if (attackType === 'especial') ataqueIdx = 1;
+        else if (attackType === 'ultimate') ataqueIdx = 2;
+        const ataque = activeChar1.attacks && activeChar1.attacks[ataqueIdx] ? activeChar1.attacks[ataqueIdx] : { name: 'Ataque Básico', damage: 1, description: '' };
+        nombreAtaque = ataque.name || 'Ataque Básico';
+        descAtaque = ataque.description || '';
+        // Multiplicador de daño - VENTAJA PARA EL JUGADOR
+        let multiplicador = ataque.damage || 1;
+        // El jugador tiene un multiplicador adicional de 1.3x para hacer más daño
+        multiplicador = multiplicador * 1.3;
         
-        if (battle.currentTeamTurn === 1 && expectedTeamId !== battle.equipo1.id) {
-            throw new Error('No es el turno del equipo del atacante');
+        if (attackType === 'normal') {
+            let dañoBase = activeChar1.attack * multiplicador;
+            ataqueJugador = Math.max(1, Math.round(dañoBase - targetChar.defense));
+            mitigacionJugador = targetChar.defense;
+        } else if (attackType === 'especial') {
+            let dañoBase = (activeChar1.specialAttack || activeChar1.attack) * multiplicador;
+            ataqueJugador = Math.max(1, Math.round(dañoBase - (targetChar.specialDefense || targetChar.defense)));
+            mitigacionJugador = targetChar.specialDefense || targetChar.defense;
+        } else if (attackType === 'ultimate') {
+            if (activeChar1.ultimateUsed) throw new Error('La ultimate solo puede usarse una vez por combate');
+            let dañoBase = (activeChar1.specialAttack || activeChar1.attack) * 1.5 * multiplicador;
+            ataqueJugador = Math.max(1, Math.round(dañoBase - (targetChar.specialDefense || targetChar.defense)));
+            mitigacionJugador = targetChar.specialDefense || targetChar.defense;
+            activeChar1.ultimateUsed = true;
         }
-        if (battle.currentTeamTurn === 2 && expectedTeamId !== battle.equipo2.id) {
-            throw new Error('No es el turno del equipo del atacante');
+        targetChar.currentHealth = Math.max(0, targetChar.currentHealth - ataqueJugador);
+        hpRestanteEnemigo = targetChar.currentHealth;
+        mensajeJugador = `${activeChar1.nombre} usó ${nombreAtaque} (${attackType}). ${descAtaque ? descAtaque + ' ' : ''}Causó ${ataqueJugador} de daño (${mitigacionJugador} mitigado). ${targetChar.nombre} tiene ${hpRestanteEnemigo} HP restante.`;
+        // Si el objetivo muere
+        let objetivoDerrotado = false;
+        if (targetChar.currentHealth <= 0) {
+            targetChar.isAlive = false;
+            objetivoDerrotado = true;
+            // Si el objetivo era el activo enemigo, cambiar al siguiente
+            if (targetChar.id === battle.active2) {
+                const equipo2 = battle.equipo2.miembros;
+                const siguiente = battle.currentCharacterStates.find(c => c.teamId === battle.equipo2.id && c.isAlive);
+                if (siguiente) {
+                    battle.active2 = siguiente.id;
+                    battle.activeIndex2 = equipo2.indexOf(siguiente.id);
+                } else {
+                    battle.isFinished = true;
+                    battle.winner = 'jugador';
+                }
+            }
+            // Si el objetivo era reserva, solo se marca como derrotado (no cambia el activo)
         }
-
-        // Validar que el equipo tenga acciones restantes
-        if (battle.remainingActions <= 0) {
-            throw new Error('El equipo ya no tiene acciones restantes en este turno');
-        }
-
-        // Limitar a un ataque por personaje por turno
-        if (battle.alreadyAttacked.includes(attackerId)) {
-            throw new Error('Este personaje ya ha atacado en este turno');
-        }
-
-        // Obtener datos completos de los personajes
-        const characters = await characterRepository.getCharacters();
-        const attackerData = characters.find(c => c.id === attackerId);
-        const targetData = characters.find(c => c.id === targetId);
-
-        if (!attackerData || !targetData) {
-            throw new Error('Error al obtener datos de los personajes');
-        }
-
-        // Crear instancias de personajes con estado actual
-        const attacker = new Character(
-            attackerData.id,
-            attackerData.nombre,
-            attackerData.alias,
-            attackerData.tipo,
-            attackerData.ciudad,
-            attackerData.equipo,
-            { ...attackerData.stats, health: attackerState.currentHealth }
-        );
-
-        const target = new Character(
-            targetData.id,
-            targetData.nombre,
-            targetData.alias,
-            targetData.tipo,
-            targetData.ciudad,
-            targetData.equipo,
-            { ...targetData.stats, health: targetState.currentHealth }
-        );
-
-        // Ejecutar el ataque
-        const attackResult = this.executeAttack(attacker, target, attackType);
-
-        // Actualizar estados de los personajes
-        attackerState.currentHealth = attacker.stats.health;
-        attackerState.isAlive = attacker.isAlive();
-        targetState.currentHealth = target.stats.health;
-        targetState.isAlive = target.isAlive();
-
-        // Crear el objeto de ataque para el log
-        const attackLog = {
-            attacker: attacker.alias,
-            defender: target.alias,
-            attackName: attackResult.attackName,
-            attackDescription: attackResult.attackDescription,
-            damage: attackResult.actualDamage,
-            critical: attackResult.critical,
-            miss: attackResult.miss,
-            defenderHealth: target.stats.health,
-            baseDamage: Math.round(attackResult.baseDamage),
-            finalDamage: Math.round(attackResult.finalDamage),
-            attackType: attackType
-        };
-
-        // Agregar el ataque al round actual o crear uno nuevo
-        if (battle.rounds.length === 0) {
-            // Crear nuevo round
-            battle.rounds.push({
-                round: battle.rounds.length + 1,
-                attacks: [attackLog]
-            });
-            battle.currentRound = battle.rounds.length;
-        } else {
-            // Agregar al round actual
-            battle.rounds[battle.rounds.length - 1].attacks.push(attackLog);
-        }
-
-        // Agregar el atacante a la lista de los que ya atacaron
-        battle.alreadyAttacked.push(attackerId);
-
-        // Reducir acciones restantes
-        battle.remainingActions--;
-
-        // Cambiar turno solo si se agotaron las acciones
-        if (battle.remainingActions <= 0) {
-            battle.currentTeamTurn = battle.currentTeamTurn === 1 ? 2 : 1;
-            battle.currentTurn++;
-            // Limpiar lista de atacantes del turno
-            battle.alreadyAttacked = [];
-            // Calcular acciones restantes para el siguiente equipo
-            const nextTeamId = battle.currentTeamTurn === 1 ? battle.equipo1.id : battle.equipo2.id;
-            const nextTeamAliveCount = battle.currentCharacterStates.filter(c => 
-                c.teamId === nextTeamId && c.isAlive
-            ).length;
-            battle.remainingActions = Math.max(1, nextTeamAliveCount); // Mínimo 1 acción
-        }
-
-        // Verificar si la batalla ha terminado
-        const team1Alive = battle.currentCharacterStates.filter(c => c.teamId === battle.equipo1.id && c.isAlive).length;
-        const team2Alive = battle.currentCharacterStates.filter(c => c.teamId === battle.equipo2.id && c.isAlive).length;
-
-        if (team1Alive === 0 || team2Alive === 0) {
-            battle.isFinished = true;
-            battle.battleStatus = 'finished';
-            battle.endTime = new Date();
-            
-            if (team1Alive === 0 && team2Alive === 0) {
-                battle.winner = 'Empate';
-                battle.loser = 'Empate';
-            } else if (team1Alive === 0) {
-                battle.winner = battle.equipo2.nombre;
-                battle.loser = battle.equipo1.nombre;
+        // --- RESPUESTA DEL ENEMIGO (si sigue vivo) ---
+        let mensajeEnemigo = '';
+        if (!battle.isFinished) {
+            const atacanteEnemigo = battle.currentCharacterStates.find(c => c.id === battle.active2 && c.isAlive);
+            const objetivoJugador = battle.currentCharacterStates.find(c => c.id === battle.active1 && c.isAlive);
+            // Decidir si usa ultimate
+            let tipoAtaqueEnemigoIdx = 0;
+            let tipoAtaqueEnemigo = 'normal';
+            if (!atacanteEnemigo.ultimateUsed && atacanteEnemigo.currentHealth / atacanteEnemigo.maxHealth <= 0.2) {
+                tipoAtaqueEnemigoIdx = 2;
+                tipoAtaqueEnemigo = 'ultimate';
+                atacanteEnemigo.ultimateUsed = true;
             } else {
-                battle.winner = battle.equipo1.nombre;
-                battle.loser = battle.equipo2.nombre;
+                tipoAtaqueEnemigoIdx = Math.floor(Math.random() * 2); // 0 o 1
+                tipoAtaqueEnemigo = tipoAtaqueEnemigoIdx === 0 ? 'normal' : 'especial';
+            }
+            const ataqueEnemigoObj = atacanteEnemigo.attacks && atacanteEnemigo.attacks[tipoAtaqueEnemigoIdx] ? atacanteEnemigo.attacks[tipoAtaqueEnemigoIdx] : { name: 'Ataque Básico', damage: 1, description: '' };
+            let nombreAtaqueEnemigo = ataqueEnemigoObj.name || 'Ataque Básico';
+            let descAtaqueEnemigo = ataqueEnemigoObj.description || '';
+            let multiplicadorEnemigo = ataqueEnemigoObj.damage || 1;
+            // El enemigo tiene un multiplicador reducido de 0.8x para hacer menos daño
+            multiplicadorEnemigo = multiplicadorEnemigo * 0.8;
+            
+            let ataqueEnemigo, mitigacionEnemigo, hpRestanteJugador;
+            if (tipoAtaqueEnemigo === 'normal') {
+                let dañoBaseEnemigo = atacanteEnemigo.attack * multiplicadorEnemigo;
+                ataqueEnemigo = Math.max(1, Math.round(dañoBaseEnemigo - objetivoJugador.defense));
+                mitigacionEnemigo = objetivoJugador.defense;
+            } else if (tipoAtaqueEnemigo === 'especial') {
+                let dañoBaseEnemigo = (atacanteEnemigo.specialAttack || atacanteEnemigo.attack) * multiplicadorEnemigo;
+                ataqueEnemigo = Math.max(1, Math.round(dañoBaseEnemigo - (objetivoJugador.specialDefense || objetivoJugador.defense)));
+                mitigacionEnemigo = objetivoJugador.specialDefense || objetivoJugador.defense;
+            } else if (tipoAtaqueEnemigo === 'ultimate') {
+                let dañoBaseEnemigo = (atacanteEnemigo.specialAttack || atacanteEnemigo.attack) * 1.5 * multiplicadorEnemigo;
+                ataqueEnemigo = Math.max(1, Math.round(dañoBaseEnemigo - (objetivoJugador.specialDefense || objetivoJugador.defense)));
+                mitigacionEnemigo = objetivoJugador.specialDefense || objetivoJugador.defense;
+            }
+            objetivoJugador.currentHealth = Math.max(0, objetivoJugador.currentHealth - ataqueEnemigo);
+            hpRestanteJugador = objetivoJugador.currentHealth;
+            mensajeEnemigo = `${atacanteEnemigo.nombre} usó ${nombreAtaqueEnemigo} (${tipoAtaqueEnemigo}). ${descAtaqueEnemigo ? descAtaqueEnemigo + ' ' : ''}Causó ${ataqueEnemigo} de daño (${mitigacionEnemigo} mitigado). ${objetivoJugador.nombre} tiene ${hpRestanteJugador} HP restante.`;
+            // Si el jugador muere, cambiar al siguiente
+            if (objetivoJugador.currentHealth <= 0) {
+                objetivoJugador.isAlive = false;
+                // Buscar siguiente personaje vivo
+                const equipo1 = battle.equipo1.miembros;
+                const siguienteJ = battle.currentCharacterStates.find(c => c.teamId === battle.equipo1.id && c.isAlive);
+                if (siguienteJ) {
+                    battle.active1 = siguienteJ.id;
+                    battle.activeIndex1 = equipo1.indexOf(siguienteJ.id);
+                } else {
+                    battle.isFinished = true;
+                    battle.winner = 'enemigo';
+                }
             }
         }
-
+        // Actualizar turno
+        battle.turnoActual = battle.isFinished ? null : 'jugador';
+        // Guardar logs
+        battle.logs.push(mensajeJugador);
+        if (mensajeEnemigo) battle.logs.push(mensajeEnemigo);
         await battle.save();
-
         return {
-            attackResult,
-            battleState: {
-                currentTurn: battle.currentTurn,
-                currentTeamTurn: battle.currentTeamTurn,
-                characterStates: battle.currentCharacterStates,
-                isFinished: battle.isFinished,
-                winner: battle.winner,
-                loser: battle.loser
-            },
-            attackLog
+            turnoJugador: mensajeJugador,
+            turnoEnemigo: mensajeEnemigo,
+            estadoCombate: battle.isFinished ? 'Finalizado' : 'En curso',
+            siguienteTurno: battle.isFinished ? null : 'jugador',
+            ganador: battle.isFinished ? battle.winner : null
         };
     }
 

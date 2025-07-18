@@ -6,7 +6,7 @@ import characterRepository from '../repositories/characterRepository.js';
 import teamRepository from '../repositories/teamRepository.js';
 import battleRepository from '../repositories/battleRepository.js';
 import Character from '../models/characterModel.js';
-import authMiddleware from '../middleware/authMiddleware.js';
+import authMiddleware, { isAdmin, filterCharactersForUser, filterBattlesForUser, filterBattleStateForUser } from '../middleware/authMiddleware.js';
 
 // Obtener referencia a los equipos
 import teamsModule from './teamController.js';
@@ -376,9 +376,38 @@ router.use(['/battles', '/battles/1v1', '/battles/create', '/battles/team-vs-tea
  */
 router.get("/battles", async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const battles = await battleService.getAllBattles(userId);
-        res.json(battles);
+        const user = req.user;
+        
+        // Si es admin, obtener todas las batallas
+        if (isAdmin(user)) {
+            const allBattles = await battleRepository.getAllBattles();
+            res.json(allBattles);
+        } else {
+            // Si es usuario normal, solo sus batallas
+            const userBattles = await battleRepository.getBattlesByUserId(user.userId);
+            const filteredBattles = filterBattlesForUser(userBattles, user);
+            res.json(filteredBattles);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint especial para admin - ver todas las batallas con detalles completos
+router.get("/admin/battles", authMiddleware, async (req, res) => {
+    try {
+        const user = req.user;
+        
+        if (!isAdmin(user)) {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden acceder a este endpoint.' });
+        }
+        
+        const allBattles = await battleRepository.getAllBattles();
+        res.json({
+            message: 'Todas las batallas obtenidas (vista de administrador)',
+            totalBattles: allBattles.length,
+            battles: allBattles
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -423,8 +452,30 @@ router.get("/battles", async (req, res) => {
  */
 router.get("/battles/characters", async (req, res) => {
     try {
-        const characters = await battleService.getAvailableCharacters();
-        res.json(characters);
+        const user = req.user;
+        const characters = await characterRepository.getCharacters();
+        const filteredCharacters = filterCharactersForUser(characters, user);
+        res.json(filteredCharacters);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint especial para admin - ver todos los personajes con detalles completos
+router.get("/admin/characters", authMiddleware, async (req, res) => {
+    try {
+        const user = req.user;
+        
+        if (!isAdmin(user)) {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden acceder a este endpoint.' });
+        }
+        
+        const characters = await characterRepository.getCharacters();
+        res.json({
+            message: 'Todos los personajes obtenidos (vista de administrador)',
+            totalCharacters: characters.length,
+            characters: characters
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -680,32 +731,18 @@ router.get("/battles/create", async (req, res) => {
  *       500:
  *         description: Error del servidor
  */
-<<<<<<< HEAD
-router.post('/battles/team-vs-team', async (req, res) => {
+router.post("/battles/team-vs-team", async (req, res) => {
     try {
-        const { equipo1Id, equipo2Id, equipo1Level = 1, equipo2Level = 1 } = req.body;
+        const { equipo1Id, equipo2Id } = req.body;
         const userId = req.user.userId;
-        
-        // Validar niveles
-        if (equipo1Level <1 || equipo1Level >5 || equipo2Level <1 || equipo2Level > 5) {
-            return res.status(400).json({ error: 'Los niveles deben estar entre 1 y 5' });
-        }
-        
-        const battle = await battleService.createTeamBattle(equipo1Id, equipo2Id, userId, equipo1Level, equipo2Level);
-        
+        const battle = await battleService.createTeamBattle(equipo1Id, equipo2Id, userId);
         res.status(201).json({
-            message: 'Batalla entre equipos creada exitosamente',
+            message: 'Batalla 3v3 creada exitosamente',
             battleId: battle._id,
-            equipo1: battle.equipo1,
-            equipo2: battle.equipo2,
-            currentCharacterStates: battle.currentCharacterStates,
-            currentTurn: battle.currentTurn,
-            currentTeamTurn: battle.currentTeamTurn,
-            remainingActions: battle.remainingActions,
-            battleStatus: battle.battleStatus
+            battle: battle
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -713,16 +750,16 @@ router.post('/battles/team-vs-team', async (req, res) => {
  * @swagger
  * /api/battles/action:
  *   post:
- *     summary: Ejecuta una acción de pelea en una batalla existente (Sistema de múltiples ataques por turno)
+ *     summary: Ejecuta una acción de pelea por turnos (sistema tipo Pokémon 3v3)
  *     description: |
- *       Ejecuta una acción de pelea en una batalla existente. Cada equipo tiene múltiples acciones por turno
- *       (generalmente 3, una por cada personaje). El turno cambia automáticamente cuando se agotan las acciones.
- *       
- *       **Sistema de Turnos:**
- *       - Cada equipo tiene acciones basadas en el número de personajes vivos
- *       - Las acciones se reducen en 1 por cada ataque ejecutado
- *       - El turno cambia cuando remainingActions llega a 0
- *       - Las acciones del siguiente equipo se calculan dinámicamente
+ *       Ejecuta una acción de pelea en una batalla 3 vs 3 por turnos, estilo Pokémon.
+ *       - Solo un personaje activo por equipo está en combate a la vez.
+ *       - El usuario debe especificar el `battleId` de la batalla en curso.
+ *       - El usuario elige el tipo de ataque: `normal`, `especial` o `ultimate` (la ultimate solo puede usarse una vez por personaje por combate).
+ *       - El usuario puede seleccionar el objetivo con `targetId` (opcional). Si no se especifica, el ataque va dirigido al personaje activo enemigo.
+ *       - Tras el ataque del usuario, el enemigo responde automáticamente.
+ *       - Si un personaje es derrotado, entra el siguiente disponible del equipo.
+ *       - El combate avanza turno a turno, y la respuesta del endpoint muestra el resumen de ambos turnos y el estado actual del combate, para que el usuario decida su siguiente acción.
  *     tags: [Batallas]
  *     security:
  *       - bearerAuth: []
@@ -731,16 +768,53 @@ router.post('/battles/team-vs-team', async (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/BattleAction'
+ *             type: object
+ *             required:
+ *               - battleId
+ *               - attackerId
+ *               - attackType
+ *             properties:
+ *               battleId:
+ *                 type: string
+ *                 description: ID de la batalla en curso
+ *               attackerId:
+ *                 type: integer
+ *                 description: ID del personaje activo del usuario
+ *               attackType:
+ *                 type: string
+ *                 enum: [normal, especial, ultimate]
+ *                 description: Tipo de ataque a realizar. La ultimate solo puede usarse una vez por personaje por combate.
+ *               targetId:
+ *                 type: integer
+ *                 description: (Opcional) ID del personaje enemigo al que se quiere atacar. Si no se especifica, se ataca al personaje activo enemigo.
  *     responses:
  *       200:
- *         description: Acción ejecutada exitosamente
+ *         description: Resumen del turno del jugador y del enemigo, y estado del combate
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/BattleActionResponse'
+ *               type: object
+ *               properties:
+ *                 turnoJugador:
+ *                   type: string
+ *                   description: Resumen del ataque del jugador (nombre del ataque, tipo, daño, mitigación, HP restante del enemigo)
+ *                 turnoEnemigo:
+ *                   type: string
+ *                   description: Resumen del ataque automático del enemigo
+ *                 estadoCombate:
+ *                   type: string
+ *                   enum: [En curso, Finalizado]
+ *                   description: Estado actual del combate
+ *                 siguienteTurno:
+ *                   type: string
+ *                   enum: [jugador, null]
+ *                   description: Indica si el siguiente turno es del jugador o si la batalla terminó
+ *                 ganador:
+ *                   type: string
+ *                   nullable: true
+ *                   description: Nombre del ganador si la batalla terminó
  *       400:
- *         description: Datos inválidos o error en la acción
+ *         description: Error de validación o de reglas de combate
  *         content:
  *           application/json:
  *             schema:
@@ -748,70 +822,41 @@ router.post('/battles/team-vs-team', async (req, res) => {
  *               properties:
  *                 error:
  *                   type: string
- *                   examples:
- *                     - value: "No es el turno del equipo del atacante"
- *                       summary: Turno incorrecto
- *                     - value: "El equipo ya no tiene acciones restantes en este turno"
- *                       summary: Acciones agotadas
- *                     - value: "El atacante está derrotado y no puede atacar"
- *                       summary: Atacante derrotado
- *                     - value: "El objetivo ya está derrotado"
- *                       summary: Objetivo derrotado
- *       401:
- *         description: No autorizado
- *       404:
- *         description: Batalla no encontrada
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Batalla no encontrada"
+ *                   example: "La ultimate solo puede usarse una vez por combate"
  *       500:
  *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Error interno del servidor"
  */
 router.post('/battles/action', async (req, res) => {
     try {
-        const { battleId, attackerId, targetId, attackType } = req.body;
+        const { battleId, attackerId, attackType, targetId } = req.body;
         const userId = req.user.userId;
-
         // Validaciones básicas
-        if (!battleId || !attackerId || !targetId || !attackType) {
+        if (!battleId || !attackerId || !attackType) {
             return res.status(400).json({ 
-                error: 'Todos los campos son requeridos: battleId, attackerId, targetId, attackType' 
+                error: 'Todos los campos son requeridos: battleId, attackerId, attackType' 
             });
         }
-
-        if (!['normal', 'especial'].includes(attackType)) {
+        if (!['normal', 'especial', 'ultimate'].includes(attackType)) {
             return res.status(400).json({ 
-                error: 'attackType debe ser "normal" o "especial"' 
+                error: 'attackType debe ser "normal", "especial" o "ultimate"' 
             });
         }
-
         const result = await battleService.executeBattleAction(battleId, userId, {
             attackerId,
-            targetId,
-            attackType
+            attackType,
+            targetId
         });
-
-        res.json({
-            message: 'Acción de pelea ejecutada exitosamente',
-            attackResult: result.attackResult,
-            battleState: result.battleState,
-            attackLog: result.attackLog
-        });
+        res.json(result);
     } catch (error) {
-        if (error.message.includes('no encontrada')) {
-            res.status(404).json({ error: error.message });
-        } else if (error.message.includes('ya ha terminado') || 
-                   error.message.includes('No es el turno') ||
-                   error.message.includes('No puedes atacar')) {
-            res.status(400).json({ error: error.message });
-        } else {
-            res.status(500).json({ error: error.message });
-        }
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -872,13 +917,14 @@ router.post('/battles/action', async (req, res) => {
 router.get('/battles/:battleId/state', async (req, res) => {
     try {
         const battleId = req.params.battleId;
-        const userId = req.user.userId;
+        const user = req.user;
 
-        const battleState = await battleService.getBattleState(battleId, userId);
+        const battleState = await battleService.getBattleState(battleId, user.userId);
+        const filteredBattleState = filterBattleStateForUser(battleState, user);
 
         res.json({
             message: 'Estado de la batalla obtenido exitosamente',
-            battleState
+            battleState: filteredBattleState
         });
     } catch (error) {
         if (error.message.includes('no encontrada')) {
@@ -887,21 +933,6 @@ router.get('/battles/:battleId/state', async (req, res) => {
             res.status(500).json({ error: error.message });
         }
     }
-=======
-router.post("/battles/team-vs-team", async (req, res) => {
-    try {
-        const { equipo1Id, equipo2Id } = req.body;
-        const userId = req.user.userId;
-        const battle = await battleService.createBattle3v3(equipo1Id, equipo2Id, userId);
-        res.status(201).json({
-            message: 'Batalla 3v3 creada exitosamente',
-            battleId: battle._id,
-            battle: battle
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
->>>>>>> c1b25f76b8ef104b0d97f1bf2c0347865902df18
 });
 
 /**
@@ -918,59 +949,14 @@ router.post("/battles/team-vs-team", async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
-<<<<<<< HEAD
- *         description: ID de la batalla (debe ser una batalla 1v1)
- *         example: "64f8a1b2c3d4e5f6a7b8c9d0"
- *     requestBody:
-=======
  *         description: ID de la batalla
  *     requestBody:
  *       required: true
->>>>>>> c1b25f76b8ef104b0d97f1bf2c0347865902df18
  *       content:
  *         application/json:
  *           schema:
  *             type: object
  *             properties:
-<<<<<<< HEAD
- *               useFinalAttack:
- *                 type: boolean
- *                 description: Si usar ataque final
- *                 example: false
- *               useShield:
- *                 type: boolean
- *                 description: Si usar escudo
- *                 example: false
- *     responses:
- *       200:
- *         description: Round simulado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Round'
- *       400:
- *         description: La batalla ya ha terminado o es una batalla 3v3
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "La batalla ya ha terminado"
- *       401:
- *         description: No autorizado
- *       404:
- *         description: Batalla no encontrada
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Batalla no encontrada"
-=======
  *               attackType:
  *                 type: string
  *                 enum: [normal, especial]
@@ -1091,7 +1077,6 @@ router.post("/battles/team-vs-team", async (req, res) => {
  *                   winner: null
  *       400:
  *         description: Error en la simulación
->>>>>>> c1b25f76b8ef104b0d97f1bf2c0347865902df18
  *       500:
  *         description: Error del servidor
  */
@@ -1329,11 +1314,7 @@ router.get("/battles/:id", async (req, res) => {
  *         example: 1
  *     responses:
  *       200:
-<<<<<<< HEAD
- *         description: Ataques especiales del personaje
-=======
  *         description: Tipos de ataque del personaje
->>>>>>> c1b25f76b8ef104b0d97f1bf2c0347865902df18
  *         content:
  *           application/json:
  *             schema:
@@ -1344,34 +1325,6 @@ router.get("/battles/:id", async (req, res) => {
  *                   properties:
  *                     id:
  *                       type: integer
-<<<<<<< HEAD
- *                       example: 1
- *                     nombre:
- *                       type: string
- *                       example: "Peter Parker"
- *                     alias:
- *                       type: string
- *                       example: "Spider-Man"
- *                     tipo:
- *                       type: string
- *                       example: "heroe"
- *                 attacks:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       name:
- *                         type: string
- *                         example: "🕷️ Lanzamiento de Telaraña"
- *                       damage:
- *                         type: number
- *                         example: 1.2
- *                       description:
- *                         type: string
- *                         example: "Lanza una telaraña que reduce la velocidad del oponente"
- *       401:
- *         description: No autorizado
-=======
  *                     nombre:
  *                       type: string
  *                     alias:
@@ -1436,7 +1389,6 @@ router.get("/battles/:id", async (req, res) => {
  *                   baseDamage: 65
  *                   damage: 2
  *                   description: "Ataque devastador, solo se puede usar una vez por batalla"
->>>>>>> c1b25f76b8ef104b0d97f1bf2c0347865902df18
  *       404:
  *         description: Personaje no encontrado
  *         content:
@@ -1452,6 +1404,7 @@ router.get("/battles/:id", async (req, res) => {
  */
 router.get("/battles/characters/:id/attacks", async (req, res) => {
     try {
+        const user = req.user;
         const characterId = parseInt(req.params.id);
         const characters = await characterRepository.getCharacters();
         const character = characters.find(c => c.id === characterId);
@@ -1472,16 +1425,34 @@ router.get("/battles/characters/:id/attacks", async (req, res) => {
             character.attacks
         );
 
-        // Definir ataques
-        const normal = charInstance.attacks[0] || null;
-        const especial = charInstance.attacks[1] || null;
-        // Ataque final: daño x2, nombre fijo
-        const final = normal ? {
-            name: '💥 Ataque Final',
-            baseDamage: charInstance.stats.attack,
-            damage: 2,
-            description: 'Ataque devastador, solo se puede usar una vez por batalla'
-        } : null;
+        // Definir ataques según el tipo de usuario
+        let normal, especial, final;
+        
+        if (isAdmin(user)) {
+            // Admin ve todos los detalles
+            normal = charInstance.attacks[0] || null;
+            especial = charInstance.attacks[1] || null;
+            final = normal ? {
+                name: '💥 Ataque Final',
+                baseDamage: charInstance.stats.attack,
+                damage: 2,
+                description: 'Ataque devastador, solo se puede usar una vez por batalla'
+            } : null;
+        } else {
+            // Usuario normal solo ve nombres y descripciones
+            normal = charInstance.attacks[0] ? {
+                name: charInstance.attacks[0].name,
+                description: charInstance.attacks[0].description
+            } : null;
+            especial = charInstance.attacks[1] ? {
+                name: charInstance.attacks[1].name,
+                description: charInstance.attacks[1].description
+            } : null;
+            final = {
+                name: '💥 Ataque Final',
+                description: 'Ataque devastador, solo se puede usar una vez por batalla'
+            };
+        }
 
         res.json({
             character: {

@@ -1,6 +1,7 @@
 import express from 'express';
 import { check, validationResult } from 'express-validator';
 import characterService from '../services/characterService.js';
+import authMiddleware, { isAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -47,13 +48,24 @@ const router = express.Router();
  * @swagger
  * /api/personajes:
  *   get:
- *     summary: Obtiene todos los personajes
+ *     summary: Obtiene todos los personajes (Solo Administradores)
  *     tags: [Personajes]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de personajes
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo administradores
  */
-router.get('/personajes', async (req, res) => {
+router.get('/personajes', authMiddleware, async (req, res) => {
+    // Verificar si es admin
+    if (!isAdmin(req.user)) {
+        return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden ver personajes.' });
+    }
+    
     try {
         const personajes = await characterService.getAllCharacters();
         res.json(personajes);
@@ -66,8 +78,10 @@ router.get('/personajes', async (req, res) => {
  * @swagger
  * /api/personajes/{id}:
  *   get:
- *     summary: Obtiene un personaje por ID
+ *     summary: Obtiene un personaje por ID (Solo Administradores)
  *     tags: [Personajes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -77,10 +91,19 @@ router.get('/personajes', async (req, res) => {
  *     responses:
  *       200:
  *         description: Personaje encontrado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo administradores
  *       404:
  *         description: Personaje no encontrado
  */
-router.get('/personajes/:id', async (req, res) => {
+router.get('/personajes/:id', authMiddleware, async (req, res) => {
+    // Verificar si es admin
+    if (!isAdmin(req.user)) {
+        return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden ver personajes.' });
+    }
+    
     try {
         const personaje = await characterService.getCharacterById(req.params.id);
         res.json(personaje);
@@ -93,8 +116,10 @@ router.get('/personajes/:id', async (req, res) => {
  * @swagger
  * /api/personajes:
  *   post:
- *     summary: Crea un nuevo personaje
+ *     summary: Crea un nuevo personaje (Solo Administradores)
  *     tags: [Personajes]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -106,14 +131,24 @@ router.get('/personajes/:id', async (req, res) => {
  *         description: Personaje creado
  *       400:
  *         description: Datos inválidos
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo administradores
  */
 router.post('/personajes',
+    authMiddleware,
     [
         check('nombre').not().isEmpty().withMessage('El nombre es requerido'),
         check('alias').not().isEmpty().withMessage('El alias es requerido'),
         check('tipo').isIn(['heroe', 'villano']).withMessage('El tipo debe ser heroe o villano')
     ],
     async (req, res) => {
+        // Verificar si es admin
+        if (!isAdmin(req.user)) {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden crear personajes.' });
+        }
+        
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ error: errors.array() });
@@ -131,8 +166,10 @@ router.post('/personajes',
  * @swagger
  * /api/personajes/{id}:
  *   put:
- *     summary: Actualiza un personaje
+ *     summary: Actualiza un personaje (Solo Administradores)
  *     tags: [Personajes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -148,10 +185,19 @@ router.post('/personajes',
  *     responses:
  *       200:
  *         description: Personaje actualizado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo administradores
  *       404:
  *         description: Personaje no encontrado
  */
-router.put('/personajes/:id', async (req, res) => {
+router.put('/personajes/:id', authMiddleware, async (req, res) => {
+    // Verificar si es admin
+    if (!isAdmin(req.user)) {
+        return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden modificar personajes.' });
+    }
+    
     try {
         const personaje = await characterService.updateCharacter(req.params.id, req.body);
         res.json(personaje);
@@ -164,8 +210,10 @@ router.put('/personajes/:id', async (req, res) => {
  * @swagger
  * /api/personajes/{id}:
  *   delete:
- *     summary: Elimina un personaje
+ *     summary: Elimina un personaje (Solo Administradores)
  *     tags: [Personajes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -175,10 +223,19 @@ router.put('/personajes/:id', async (req, res) => {
  *     responses:
  *       200:
  *         description: Personaje eliminado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo administradores
  *       404:
  *         description: Personaje no encontrado
  */
-router.delete('/personajes/:id', async (req, res) => {
+router.delete('/personajes/:id', authMiddleware, async (req, res) => {
+    // Verificar si es admin
+    if (!isAdmin(req.user)) {
+        return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden eliminar personajes.' });
+    }
+    
     try {
         const result = await characterService.deleteCharacter(req.params.id);
         res.json(result);
@@ -191,8 +248,10 @@ router.delete('/personajes/:id', async (req, res) => {
  * @swagger
  * /api/personajes/tipo/{tipo}:
  *   get:
- *     summary: Obtiene personajes por tipo (heroe o villano)
+ *     summary: Obtiene personajes por tipo (Solo Administradores)
  *     tags: [Personajes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: tipo
@@ -203,8 +262,17 @@ router.delete('/personajes/:id', async (req, res) => {
  *     responses:
  *       200:
  *         description: Lista de personajes filtrados
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo administradores
  */
-router.get('/personajes/tipo/:tipo', async (req, res) => {
+router.get('/personajes/tipo/:tipo', authMiddleware, async (req, res) => {
+    // Verificar si es admin
+    if (!isAdmin(req.user)) {
+        return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden ver personajes.' });
+    }
+    
     try {
         const personajes = await characterService.getCharactersByType(req.params.tipo);
         res.json(personajes);

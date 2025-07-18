@@ -1,9 +1,5 @@
 class Character {
-<<<<<<< HEAD
-    constructor(id, nombre, alias, tipo, ciudad, equipo, stats = {}, level = 1) {
-=======
-    constructor(id, nombre, alias, tipo, ciudad, equipo, stats = {}, attacks = undefined) {
->>>>>>> c1b25f76b8ef104b0d97f1bf2c0347865902df18
+    constructor(id, nombre, alias, tipo, ciudad, equipo, stats = {}, attacks = undefined, level = 1) {
         this.id = id;
         this.nombre = nombre;
         this.alias = alias;
@@ -20,12 +16,6 @@ class Character {
             speed: stats.speed || 40,
             ...stats
         };
-<<<<<<< HEAD
-        // Aplicar bonificaciones de nivel
-        this.stats = this.applyLevelBonuses(baseStats);
-        // Definir ataques especiales basados en el alias del personaje
-        this.specialAttacks = this.getSpecialAttacks();
-=======
         // Usar ataques del JSON si existen, si no usar los especiales por alias
         if (Array.isArray(attacks) && attacks.length > 0) {
             this.attacks = attacks;
@@ -35,7 +25,7 @@ class Character {
         this.specialAttacks = this.attacks;
         this.finalAttackUsed = false;
         this.shieldUsed = false;
->>>>>>> c1b25f76b8ef104b0d97f1bf2c0347865902df18
+        this.stats = this.applyLevelBonuses(baseStats);
     }
 
     applyLevelBonuses(baseStats) {
