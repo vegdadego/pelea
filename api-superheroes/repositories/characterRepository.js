@@ -1,1 +1,0 @@
-// Este archivo ya no se usa. Todo se consulta desde MongoDB usando Mongoose. 

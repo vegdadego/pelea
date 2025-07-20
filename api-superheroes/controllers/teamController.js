@@ -1,6 +1,5 @@
 import express from 'express';
 import { check, validationResult } from 'express-validator';
-import teamRepository from '../repositories/teamRepository.js';
 import authMiddleware, { isAdmin } from '../middleware/authMiddleware.js';
 import Team from '../models/teamModel.js';
 import Character from '../models/characterModel.js';

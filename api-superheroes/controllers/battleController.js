@@ -2,9 +2,6 @@ import express from "express";
 import { check, validationResult } from 'express-validator';
 import battleService from "../services/battleService.js";
 import teamController from './teamController.js';
-import characterRepository from '../repositories/characterRepository.js';
-import teamRepository from '../repositories/teamRepository.js';
-import battleRepository from '../repositories/battleRepository.js';
 import Character from '../models/characterModel.js';
 import authMiddleware, { isAdmin, filterCharactersForUser, filterBattlesForUser, filterBattleStateForUser } from '../middleware/authMiddleware.js';
 
@@ -380,11 +377,11 @@ router.get("/battles", async (req, res) => {
         
         // Si es admin, obtener todas las batallas
         if (isAdmin(user)) {
-            const allBattles = await battleRepository.getAllBattles();
+            const allBattles = await Character.find(); // Assuming Character model is the source for battles
             res.json(allBattles);
         } else {
             // Si es usuario normal, solo sus batallas
-            const userBattles = await battleRepository.getBattlesByUserId(user.userId);
+            const userBattles = await Character.find({ userId: user.userId }); // Assuming Character model is the source for battles
             const filteredBattles = filterBattlesForUser(userBattles, user);
             res.json(filteredBattles);
         }
@@ -402,7 +399,7 @@ router.get("/admin/battles", authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden acceder a este endpoint.' });
         }
         
-        const allBattles = await battleRepository.getAllBattles();
+        const allBattles = await Character.find(); // Assuming Character model is the source for battles
         res.json({
             message: 'Todas las batallas obtenidas (vista de administrador)',
             totalBattles: allBattles.length,
@@ -453,7 +450,7 @@ router.get("/admin/battles", authMiddleware, async (req, res) => {
 router.get("/battles/characters", async (req, res) => {
     try {
         const user = req.user;
-        const characters = await characterRepository.getCharacters();
+        const characters = await Character.find();
         const filteredCharacters = filterCharactersForUser(characters, user);
         res.json(filteredCharacters);
     } catch (error) {
@@ -470,7 +467,7 @@ router.get("/admin/characters", authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden acceder a este endpoint.' });
         }
         
-        const characters = await characterRepository.getCharacters();
+        const characters = await Character.find();
         res.json({
             message: 'Todos los personajes obtenidos (vista de administrador)',
             totalCharacters: characters.length,
@@ -1403,7 +1400,7 @@ router.get("/battles/characters/:id/attacks", async (req, res) => {
     try {
         const user = req.user;
         const characterId = parseInt(req.params.id);
-        const characters = await characterRepository.getCharacters();
+        const characters = await Character.find();
         const character = characters.find(c => c.id === characterId);
         
         if (!character) {
