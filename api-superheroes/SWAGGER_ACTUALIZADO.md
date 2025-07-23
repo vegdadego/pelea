@@ -192,25 +192,19 @@ BattleActionResponse:
 - Agregado schema de respuesta completo
 - Agregados códigos de error 401, 500
 
-### 4. `GET /api/battles/{id}`
-- Agregada autenticación JWT
-- Cambiado tipo de ID a string
-- Agregado ejemplo de ID
-- Agregados códigos de error 401, 404, 500
-
-### 5. `GET /api/battles/characters/{id}/attacks`
+### 4. `GET /api/battles/characters/{id}/attacks`
 - Agregada autenticación JWT
 - Agregado schema de respuesta detallado
 - Agregados ejemplos de ataques especiales
 - Agregados códigos de error 401, 404, 500
 
-### 6. `POST /api/battles/{id}/round`
+### 5. `POST /api/battles/{id}/round`
 - Agregada autenticación JWT
 - Cambiado tipo de ID a string
 - Agregado requestBody con opciones de ataque final y escudo
 - Agregados códigos de error 401, 404, 500
 
-### 7. `POST /api/battles/{id}/simulate`
+### 6. `POST /api/battles/{id}/simulate`
 - Agregada autenticación JWT
 - Cambiado tipo de ID a string
 - Agregados códigos de error 401, 404, 500

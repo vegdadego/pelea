@@ -89,12 +89,6 @@ AvailableActions:
 - **Agregada descripción detallada** de la información incluida
 - **Campo `remainingActions`** incluido en la respuesta
 
-### 4. `GET /api/battles/{battleId}/available-actions` (NUEVO)
-- **Endpoint completamente nuevo** para obtener acciones disponibles
-- **Descripción detallada** del uso y beneficios
-- **Schema `AvailableActions`** para la respuesta
-- **Información de atacantes y objetivos** disponibles
-
 ## Mejoras en la Documentación
 
 ### 📝 **Descripciones Detalladas**
@@ -155,34 +149,6 @@ Response:
   "currentTeamTurn": 1,
   "remainingActions": 3,
   "battleStatus": "active"
-}
-```
-
-### Obtener Acciones Disponibles
-```json
-GET /api/battles/{battleId}/available-actions
-
-Response:
-{
-  "message": "Acciones disponibles obtenidas exitosamente",
-  "currentTeam": 1,
-  "remainingActions": 3,
-  "availableAttackers": [
-    {
-      "id": 1,
-      "alias": "Spider-Man",
-      "currentHealth": 100,
-      "isAlive": true
-    }
-  ],
-  "availableTargets": [
-    {
-      "id": 4,
-      "alias": "Superman",
-      "currentHealth": 100,
-      "isAlive": true
-    }
-  ]
 }
 ```
 
