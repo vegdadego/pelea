@@ -46,6 +46,26 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /api/personajes/public:
+ *   get:
+ *     summary: Obtiene todos los personajes (Público - Para el juego)
+ *     tags: [Personajes]
+ *     responses:
+ *       200:
+ *         description: Lista de personajes
+ */
+// Endpoint público para obtener personajes (para el juego HTML)
+router.get('/personajes/public', async (req, res) => {
+    try {
+        const personajes = await characterService.getAllCharacters();
+        res.json(personajes);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * @swagger
  * /api/personajes:
  *   get:
  *     summary: Obtiene todos los personajes (Solo Administradores)

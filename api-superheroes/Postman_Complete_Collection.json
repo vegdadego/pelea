@@ -1,0 +1,719 @@
+{
+  "info": {
+    "name": "API Superhéroes - Automatización Completa",
+    "description": "Colección completa para automatizar la API de superhéroes con generación aleatoria de datos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://pelea.onrender.com/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "currentBattleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "currentTeamId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "availableCharacters",
+      "value": "[]",
+      "type": "string"
+    },
+    {
+      "key": "availableTeams",
+      "value": "[]",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script de pre-request global",
+          "console.log('Ejecutando pre-request para:', pm.request.name);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script de test global",
+          "console.log('Respuesta recibida para:', pm.request.name);",
+          "console.log('Status:', pm.response.status);",
+          "console.log('Response:', pm.response.text());"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Autenticación",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"vegdadego\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guardar token después del login",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.token) {",
+                  "        pm.collectionVariables.set('authToken', response.token);",
+                  "        pm.collectionVariables.set('adminToken', response.token);",
+                  "        console.log('Token guardado:', response.token.substring(0, 20) + '...');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro Usuario Aleatorio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"usuario{{$randomInt}}\",\n  \"password\": \"password123\",\n  \"nombre\": \"Usuario {{$randomInt}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Personajes (Admin)",
+      "item": [
+        {
+          "name": "Obtener Todos los Personajes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personajes",
+              "host": ["{{baseUrl}}"],
+              "path": ["personajes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guardar personajes disponibles",
+                  "if (pm.response.code === 200) {",
+                  "    const characters = pm.response.json();",
+                  "    pm.collectionVariables.set('availableCharacters', JSON.stringify(characters));",
+                  "    console.log('Personajes disponibles guardados:', characters.length);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear Personaje Aleatorio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{$randomFullName}}\",\n  \"alias\": \"{{$randomFullName}}\",\n  \"tipo\": \"{{$randomPick heroe villano}}\",\n  \"ciudad\": \"{{$randomCity}}\",\n  \"equipo\": \"{{$randomPick Los Vengadores La Liga de la Justicia}}\",\n  \"stats\": {\n    \"health\": {{$randomInt 80 150}},\n    \"maxHealth\": {{$randomInt 80 150}},\n    \"attack\": {{$randomInt 50 100}},\n    \"defense\": {{$randomInt 30 90}},\n    \"speed\": {{$randomInt 40 95}}\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personajes",
+              "host": ["{{baseUrl}}"],
+              "path": ["personajes"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Personaje por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personajes/{{$randomInt 1 8}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["personajes", "{{$randomInt 1 8}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Personaje",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Personaje Actualizado\",\n  \"alias\": \"Alias Nuevo\",\n  \"tipo\": \"{{$randomPick heroe villano}}\",\n  \"ciudad\": \"Ciudad Actualizada\",\n  \"equipo\": \"Equipo Nuevo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personajes/{{$randomInt 1 8}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["personajes", "{{$randomInt 1 8}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Personaje",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personajes/{{$randomInt 1 8}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["personajes", "{{$randomInt 1 8}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Personajes por Tipo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/personajes/tipo/{{$randomPick heroe villano}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["personajes", "tipo", "{{$randomPick heroe villano}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚔️ Equipos",
+      "item": [
+        {
+          "name": "Obtener Mis Equipos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipos",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guardar equipos disponibles",
+                  "if (pm.response.code === 200) {",
+                  "    const teams = pm.response.json();",
+                  "    pm.collectionVariables.set('availableTeams', JSON.stringify(teams));",
+                  "    console.log('Equipos disponibles guardados:', teams.length);",
+                  "    if (teams.length > 0) {",
+                  "        pm.collectionVariables.set('currentTeamId', teams[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear Equipo Aleatorio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{$randomPick Los Vengadores La Liga de la Justicia Los X-Men Los 4 Fantásticos}}\",\n  \"miembros\": [{{$randomInt 1 8}}, {{$randomInt 1 8}}, {{$randomInt 1 8}}]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/equipos",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos"]
+            }
+          }
+        },
+        {
+          "name": "Crear Equipo Específico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Los Vengadores Clásicos\",\n  \"miembros\": [1, 4, 5]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/equipos",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Equipo por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipos/{{currentTeamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos", "{{currentTeamId}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Equipo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Equipo Actualizado\",\n  \"miembros\": [{{$randomInt 1 8}}, {{$randomInt 1 8}}, {{$randomInt 1 8}}]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/equipos/{{currentTeamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos", "{{currentTeamId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Equipo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/equipos/{{currentTeamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos", "{{currentTeamId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚔️ Batallas",
+      "item": [
+        {
+          "name": "Obtener Todas las Batallas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/battles",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Personajes para Batalla",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/battles/characters",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "characters"]
+            }
+          }
+        },
+        {
+          "name": "Crear Batalla 1v1 Aleatoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"char1Id\": {{$randomInt 1 8}},\n  \"char2Id\": {{$randomInt 1 8}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/battles/1v1",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "1v1"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guardar ID de batalla",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.battleId) {",
+                  "        pm.collectionVariables.set('currentBattleId', response.battleId);",
+                  "        console.log('ID de batalla guardado:', response.battleId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear Batalla entre Equipos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipo1Id\": {{$randomInt 1 5}},\n  \"equipo2Id\": {{$randomInt 1 5}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/battles/team-vs-team",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "team-vs-team"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guardar ID de batalla",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.battleId) {",
+                  "        pm.collectionVariables.set('currentBattleId', response.battleId);",
+                  "        console.log('ID de batalla guardado:', response.battleId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener Estado de Batalla",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/battles/{{currentBattleId}}/state",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "{{currentBattleId}}", "state"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Validar estado de batalla",
+                  "if (pm.response.code === 200) {",
+                  "    const battleState = pm.response.json();",
+                  "    if (battleState.isFinished) {",
+                  "        console.log('Batalla terminada. Ganador:', battleState.winner);",
+                  "    } else {",
+                  "        console.log('Batalla en curso. Turno:', battleState.currentTurn);",
+                  "        console.log('Equipo actual:', battleState.currentTeamTurn);",
+                  "        console.log('Acciones restantes:', battleState.remainingActions);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ejecutar Acción de Batalla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"battleId\": \"{{currentBattleId}}\",\n  \"attackerId\": {{$randomInt 1 8}},\n  \"targetId\": {{$randomInt 1 8}},\n  \"attackType\": \"{{$randomPick normal especial ultimate}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/battles/action",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "action"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Ataques de Personaje",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/battles/characters/{{$randomInt 1 8}}/attacks",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "characters", "{{$randomInt 1 8}}", "attacks"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Acciones Disponibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/battles/{{currentBattleId}}/available-actions",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "{{currentBattleId}}", "available-actions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎯 Flujos Automatizados",
+      "item": [
+        {
+          "name": "Flujo Completo: Crear Equipo y Batalla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Equipo Automático\",\n  \"miembros\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/equipos",
+              "host": ["{{baseUrl}}"],
+              "path": ["equipos"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Después de crear equipo, crear batalla automáticamente",
+                  "if (pm.response.code === 201) {",
+                  "    const team = pm.response.json();",
+                  "    console.log('Equipo creado:', team.nombre);",
+                  "    ",
+                  "    // Crear batalla automáticamente",
+                  "    const battleData = {",
+                  "        equipo1Id: team.id,",
+                  "        equipo2Id: 2",
+                  "    };",
+                  "    ",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/battles/team-vs-team',",
+                  "        method: 'POST',",
+                  "        header: {",
+                  "            'Content-Type': 'application/json',",
+                  "            'Authorization': 'Bearer ' + pm.collectionVariables.get('authToken')",
+                  "        },",
+                  "        body: {",
+                  "            mode: 'raw',",
+                  "            raw: JSON.stringify(battleData)",
+                  "        }",
+                  "    }, function (err, response) {",
+                  "        if (response.code === 201) {",
+                  "            const battleResponse = response.json();",
+                  "            pm.collectionVariables.set('currentBattleId', battleResponse.battleId);",
+                  "            console.log('Batalla creada automáticamente:', battleResponse.battleId);",
+                  "        }",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Flujo: Ejecutar Múltiples Acciones",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"battleId\": \"{{currentBattleId}}\",\n  \"attackerId\": 1,\n  \"targetId\": 4,\n  \"attackType\": \"especial\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/battles/action",
+              "host": ["{{baseUrl}}"],
+              "path": ["battles", "action"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Ejecutar múltiples acciones automáticamente",
+                  "if (pm.response.code === 200) {",
+                  "    console.log('Acción ejecutada exitosamente');",
+                  "    ",
+                  "    // Ejecutar segunda acción",
+                  "    const action2 = {",
+                  "        battleId: pm.collectionVariables.get('currentBattleId'),",
+                  "        attackerId: 2,",
+                  "        targetId: 5,",
+                  "        attackType: 'normal'",
+                  "    };",
+                  "    ",
+                  "    setTimeout(() => {",
+                  "        pm.sendRequest({",
+                  "            url: pm.collectionVariables.get('baseUrl') + '/battles/action',",
+                  "            method: 'POST',",
+                  "            header: {",
+                  "                'Content-Type': 'application/json',",
+                  "                'Authorization': 'Bearer ' + pm.collectionVariables.get('authToken')",
+                  "            },",
+                  "            body: {",
+                  "                mode: 'raw',",
+                  "                raw: JSON.stringify(action2)",
+                  "            }",
+                  "        }, function (err, response) {",
+                  "            console.log('Segunda acción ejecutada');",
+                  "        });",
+                  "    }, 1000);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+} 

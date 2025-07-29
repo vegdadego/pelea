@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superhéroes Battle - Juego de Combate</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚔️ Superhéroes Battle</h1>
+            <p>Combate por turnos estilo Pokémon</p>
+        </div>
+
+        <!-- Pantalla de Inicio -->
+        <div id="startScreen" class="start-screen fade-in">
+            <h2>¡Bienvenido al Combate de Superhéroes!</h2>
+            <p>
+                En este emocionante juego de combate por turnos, podrás elegir tu personaje favorito 
+                y enfrentarte a otros superhéroes en batallas épicas. Cada personaje tiene habilidades 
+                únicas y estadísticas diferentes. ¡Elige sabiamente y demuestra tu estrategia!
+            </p>
+            <p>
+                <strong>Instrucciones:</strong><br>
+                1. Selecciona tu personaje favorito<br>
+                2. Elige tus movimientos estratégicamente<br>
+                3. ¡Combate hasta la victoria!
+            </p>
+            <button id="startBtn" class="btn">🚀 Comenzar Juego</button>
+        </div>
+
+        <!-- Pantalla de Selección -->
+        <div id="selectionScreen" class="selection-screen">
+            <h2>Selecciona tu Personaje</h2>
+            <div id="charactersGrid" class="characters-grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando personajes...</p>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <button id="startBattleBtn" class="btn" disabled>⚔️ Iniciar Batalla</button>
+            </div>
+        </div>
+
+        <!-- Pantalla de Combate -->
+        <div id="battleScreen" class="battle-screen">
+            <div class="battle-header">
+                <h2>⚔️ Batalla en Curso</h2>
+                <div id="turnIndicator" class="turn-indicator">Tu turno</div>
+            </div>
+
+            <div class="battle-field">
+                <!-- Personaje del Jugador -->
+                <div class="character-battle">
+                    <h3 id="playerName">Tu Personaje</h3>
+                    <div class="health-bar">
+                        <div id="playerHealth" class="health-fill" style="width: 100%;"></div>
+                    </div>
+                    <div class="health-text" id="playerHealthText">100 / 100 HP</div>
+                    <div id="playerStatus">Estado: Normal</div>
+                </div>
+
+                <!-- Personaje del Enemigo -->
+                <div class="character-battle">
+                    <h3 id="enemyName">Enemigo</h3>
+                    <div class="health-bar">
+                        <div id="enemyHealth" class="health-fill" style="width: 100%;"></div>
+                    </div>
+                    <div class="health-text" id="enemyHealthText">100 / 100 HP</div>
+                    <div id="enemyStatus">Estado: Normal</div>
+                </div>
+            </div>
+
+            <div class="battle-controls">
+                <h3>Movimientos Disponibles</h3>
+                <div id="movesGrid" class="moves-grid">
+                    <button class="move-btn" data-move="normal">Ataque Normal</button>
+                    <button class="move-btn" data-move="especial">Ataque Especial</button>
+                    <button class="move-btn" data-move="ultimate">Ataque Ultimate</button>
+                </div>
+                <button id="attackBtn" class="btn">⚔️ Realizar Ataque</button>
+            </div>
+
+            <div class="battle-log">
+                <h3>📜 Registro de Batalla</h3>
+                <div id="battleLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html> 
