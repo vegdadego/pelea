@@ -30,7 +30,7 @@ class BattleService {
             currentRound: 0,
             isFinished: false,
             startTime: new Date(),
-            turnoActual: 'usuario'
+            turnoActual: 'jugador'
         });
         await battleDoc.save();
         return battleDoc;
@@ -75,14 +75,19 @@ class BattleService {
             currentRound: 0,
             isFinished: false,
             startTime: new Date(),
-            turnoActual: 'usuario'
+            turnoActual: 'jugador'
         });
         await battleDoc.save();
         return battleDoc;
     }
 
-    async getAllBattles(userId) {
-        throw new Error('Lógica de batalla no implementada');
+    async getAllBattles() {
+        try {
+            const battles = await Battle.find({}).sort({ startTime: -1 });
+            return battles;
+        } catch (error) {
+            throw new Error('Error obteniendo batallas: ' + error.message);
+        }
     }
 
     async getBattleStats(battleId, userId) {
@@ -117,7 +122,7 @@ class BattleService {
             const nivelIA = ia.nivel || 1;
 
             // TURNO DEL USUARIO
-            if (turno === 'usuario') {
+            if (turno === 'jugador') {
                 let danio = attackType === 'especial' ? user.ataque_especial : user.ataque_normal;
                 const { danioReal, absorbido } = aplicarDanio(ia, danio, false, nivelUsuario);
                 resultado.acciones.push({
@@ -129,10 +134,10 @@ class BattleService {
                     hpDefensor: ia.hp,
                     nivel: nivelUsuario
                 });
-                battle.turnoActual = 'ia';
+                battle.turnoActual = 'enemigo';
             }
             // TURNO DE LA IA
-            else if (turno === 'ia') {
+            else if (turno === 'enemigo') {
                 let iaUsaEspecial = Math.random() < 0.3;
                 let iaUsaEscudo = ia.hp < ia.maxHp * 0.4 && !ia.escudoUsado && ia.escudo > 0;
                 let danio = iaUsaEspecial ? ia.ataque_especial : ia.ataque_normal;
@@ -147,7 +152,7 @@ class BattleService {
                     userEscudo: useShield,
                     nivel: nivelIA
                 });
-                battle.turnoActual = 'usuario';
+                battle.turnoActual = 'jugador';
             }
 
             // Guardar round
@@ -201,7 +206,7 @@ class BattleService {
             }
 
             // TURNO DEL USUARIO
-            if (turno === 'usuario') {
+            if (turno === 'jugador') {
                 // Buscar objetivo por alias o id
                 let objetivo = equipo2.find(p => (p.alias === target || String(p.id) === String(target)) && p.hp > 0);
                 if (!objetivo) {
@@ -218,10 +223,10 @@ class BattleService {
                     hpDefensor: objetivo.hp,
                     nivel: nivelUsuario
                 });
-                battle.turnoActual = 'ia';
+                battle.turnoActual = 'enemigo';
             }
             // TURNO DE LA IA
-            else if (turno === 'ia') {
+            else if (turno === 'enemigo') {
                 // IA ataca al primer personaje vivo del equipo1
                 let ia = equipo2.find(p => p.hp > 0);
                 let objetivo = equipo1.find(p => p.hp > 0);
@@ -253,7 +258,7 @@ class BattleService {
                     hpDefensor: objetivo.hp,
                     nivel: nivelIA
                 });
-                battle.turnoActual = 'usuario';
+                battle.turnoActual = 'jugador';
             }
 
             // Guardar round

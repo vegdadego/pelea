@@ -17,6 +17,11 @@ const characterSchema = new mongoose.Schema({
     specialAttack: { type: Number },
     specialDefense: { type: Number }
   },
+  ataques: {
+    normal: { type: String },
+    especial: { type: String },
+    ultimate: { type: String }
+  },
   attacks: [
     {
       name: String,

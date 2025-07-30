@@ -112,6 +112,14 @@ class SuperheroesBattle {
         document.getElementById('showLogin').addEventListener('click', (e) => this.switchForm(e, 'login'));
         this.elements.logoutBtn.addEventListener('click', () => this.logout());
 
+        // Event listener para el panel de administración
+        const adminPanelBtn = document.getElementById('adminPanelBtn');
+        if (adminPanelBtn) {
+            adminPanelBtn.addEventListener('click', () => {
+                window.location.href = '/admin';
+            });
+        }
+
         // Event listeners del juego
         this.elements.startBtn1v1.addEventListener('click', () => {
             console.log('🎮 Botón 1v1 clickeado');
@@ -259,6 +267,19 @@ class SuperheroesBattle {
     updateUserInfo() {
         if (this.currentUser) {
             this.elements.userName.textContent = this.currentUser.nombre || this.currentUser.user;
+            
+            // Verificar si el usuario es admin
+            const adminPanelBtn = document.getElementById('adminPanelBtn');
+            if (adminPanelBtn) {
+                if (this.currentUser.user === 'vegdadego') {
+                    adminPanelBtn.style.display = 'inline-block';
+                    // Guardar token de admin para la interfaz de administración
+                    localStorage.setItem('adminToken', this.authToken);
+                } else {
+                    adminPanelBtn.style.display = 'none';
+                    localStorage.removeItem('adminToken');
+                }
+            }
         }
     }
 
@@ -936,13 +957,23 @@ class SuperheroesBattle {
         const hero2 = this.getMergedCharacterData(hero2Id, charStates);
         console.log('👥 Heroes merged data:', { hero1, hero2 });
 
+        // Calcular vida para hero1
+        const hero1CurrentHp = hero1.isAlive === false ? 0 : (hero1.currentHealth || hero1.hp || hero1.health || 100);
+        const hero1MaxHp = hero1.maxHp || hero1.maxHealth || 100;
+        const hero1HealthPercentage = (hero1CurrentHp / hero1MaxHp) * 100;
+
+        // Calcular vida para hero2
+        const hero2CurrentHp = hero2.isAlive === false ? 0 : (hero2.currentHealth || hero2.hp || hero2.health || 100);
+        const hero2MaxHp = hero2.maxHp || hero2.maxHealth || 100;
+        const hero2HealthPercentage = (hero2CurrentHp / hero2MaxHp) * 100;
+
         this.elements.playerTeam.innerHTML = `
             <div class="team-member ${hero1.isAlive === false ? 'dead' : 'active'}">
                 <h4>${hero1.alias || hero1.nombre}</h4>
                 <div class="health-bar">
-                    <div class="health-fill" style="width: ${(hero1.currentHealth || hero1.hp || hero1.health) / (hero1.maxHp || hero1.maxHealth || 100) * 100}%"></div>
+                    <div class="health-fill" style="width: ${hero1HealthPercentage}%"></div>
                 </div>
-                <div class="health-text">${hero1.currentHealth || hero1.hp || hero1.health} / ${hero1.maxHp || hero1.maxHealth || 100} HP</div>
+                <div class="health-text">${hero1CurrentHp} / ${hero1MaxHp} HP</div>
                 <div class="status">${hero1.isAlive === false ? 'Estado: Muerto' : 'Estado: Normal'}</div>
             </div>
         `;
@@ -951,9 +982,9 @@ class SuperheroesBattle {
             <div class="team-member ${hero2.isAlive === false ? 'dead' : ''}">
                 <h4>${hero2.alias || hero2.nombre}</h4>
                 <div class="health-bar">
-                    <div class="health-fill" style="width: ${(hero2.currentHealth || hero2.hp || hero2.health) / (hero2.maxHp || hero2.maxHealth || 100) * 100}%"></div>
+                    <div class="health-fill" style="width: ${hero2HealthPercentage}%"></div>
                 </div>
-                <div class="health-text">${hero2.currentHealth || hero2.hp || hero2.health} / ${hero2.maxHp || hero2.maxHealth || 100} HP</div>
+                <div class="health-text">${hero2CurrentHp} / ${hero2MaxHp} HP</div>
                 <div class="status">${hero2.isAlive === false ? 'Estado: Muerto' : 'Estado: Normal'}</div>
             </div>
         `;
@@ -1013,14 +1044,16 @@ class SuperheroesBattle {
         console.log('👥 Teams merged data:', { team1, team2 });
 
         this.elements.playerTeam.innerHTML = team1.map(hero => {
-            const currentHp = hero.currentHealth || hero.hp || hero.health || 100;
             const maxHp = hero.maxHp || hero.maxHealth || 100;
+            const currentHp = hero.isAlive === false ? 0 : (hero.currentHealth || hero.hp || hero.health || 100);
             const isAlive = hero.isAlive !== false && currentHp > 0;
+            const healthPercentage = (currentHp / maxHp) * 100;
+            
             return `
                 <div class="team-member ${isAlive ? 'active' : 'dead'}">
                     <h4>${hero.alias || hero.nombre}</h4>
                     <div class="health-bar">
-                        <div class="health-fill" style="width: ${(currentHp / maxHp) * 100}%"></div>
+                        <div class="health-fill" style="width: ${healthPercentage}%"></div>
                     </div>
                     <div class="health-text">${currentHp} / ${maxHp} HP</div>
                     <div class="status">${isAlive ? 'Estado: Normal' : 'Estado: Muerto'}</div>
@@ -1029,14 +1062,16 @@ class SuperheroesBattle {
         }).join('');
 
         this.elements.enemyTeam.innerHTML = team2.map(hero => {
-            const currentHp = hero.currentHealth || hero.hp || hero.health || 100;
             const maxHp = hero.maxHp || hero.maxHealth || 100;
+            const currentHp = hero.isAlive === false ? 0 : (hero.currentHealth || hero.hp || hero.health || 100);
             const isAlive = hero.isAlive !== false && currentHp > 0;
+            const healthPercentage = (currentHp / maxHp) * 100;
+            
             return `
                 <div class="team-member ${isAlive ? '' : 'dead'}">
                     <h4>${hero.alias || hero.nombre}</h4>
                     <div class="health-bar">
-                        <div class="health-fill" style="width: ${(currentHp / maxHp) * 100}%"></div>
+                        <div class="health-fill" style="width: ${healthPercentage}%"></div>
                     </div>
                     <div class="health-text">${currentHp} / ${maxHp} HP</div>
                     <div class="status">${isAlive ? 'Estado: Normal' : 'Estado: Muerto'}</div>
@@ -1408,22 +1443,25 @@ class SuperheroesBattle {
     updateHealthBar(member, characterName, newHp) {
         const healthBar = member.querySelector('.health-fill');
         const healthText = member.querySelector('.health-text');
-        
+
         if (healthBar && healthText) {
             // Extraer HP máximo del texto actual
             const currentText = healthText.textContent;
             const maxHpMatch = currentText.match(/\d+\s*\/\s*(\d+)/);
             const maxHp = maxHpMatch ? parseInt(maxHpMatch[1]) : 100;
-            
-            console.log(`📊 Actualizando barra de vida: ${newHp}/${maxHp} HP`);
-            
+
+            // Si el personaje está muerto, mostrar 0 HP
+            const displayHp = newHp <= 0 ? 0 : newHp;
+            const healthPercentage = Math.max(0, (displayHp / maxHp) * 100);
+
+            console.log(`📊 Actualizando barra de vida: ${displayHp}/${maxHp} HP (${healthPercentage}%)`);
+
             // Actualizar barra de vida
-            const healthPercentage = Math.max(0, (newHp / maxHp) * 100);
             healthBar.style.width = `${healthPercentage}%`;
-            
+
             // Actualizar texto de HP
-            healthText.textContent = `${newHp} / ${maxHp} HP`;
-            
+            healthText.textContent = `${displayHp} / ${maxHp} HP`;
+
             // Actualizar estado si está muerto
             const statusElement = member.querySelector('.status');
             if (statusElement) {
@@ -1441,8 +1479,8 @@ class SuperheroesBattle {
                     console.log(`❤️ ${characterName} marcado como vivo`);
                 }
             }
-            
-            console.log(`✅ Actualizada vida de ${characterName}: ${newHp}/${maxHp} HP`);
+
+            console.log(`✅ Actualizada vida de ${characterName}: ${displayHp}/${maxHp} HP`);
         } else {
             console.log(`❌ No se encontraron elementos de vida para ${characterName}`);
         }
@@ -1572,7 +1610,8 @@ class SuperheroesBattle {
             // Limpiar selecciones después del ataque
             this.selectedAttacker = null;
             this.selectedTarget = null;
-            this.updateSelectionUI();
+            this.updateManualSelectionDisplay();
+            this.updateSelectionVisuals();
 
         } catch (error) {
             console.error('❌ Error en performAttack:', error);

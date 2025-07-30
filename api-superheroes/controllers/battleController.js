@@ -932,4 +932,34 @@ router.get('/battles/:battleId/state', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/batallas:
+ *   get:
+ *     summary: Obtener todas las batallas (Solo Admin)
+ *     tags: [Batallas]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todas las batallas
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo admin
+ */
+// Obtener todas las batallas (solo admin)
+router.get('/batallas', authMiddleware, async (req, res) => {
+    try {
+        if (!isAdmin(req.user)) {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden ver todas las batallas.' });
+        }
+        
+        const battles = await battleService.getAllBattles();
+        res.json(battles);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router; 

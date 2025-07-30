@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import path from "path";
+import { fileURLToPath } from 'url';
 import authController from "./controllers/authController.js";
 import characterController from './controllers/characterController.js';
 import battleController from './controllers/battleController.js';
@@ -12,6 +14,8 @@ dotenv.config();
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuración de CORS
 app.use((req, res, next) => {
@@ -81,4 +85,17 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authController);
 app.use('/api', characterController);
 app.use('/api', battleController);
-app.use('/api', teamController); 
+app.use('/api', teamController);
+
+// Servir archivos estáticos
+app.use('/game-interface', express.static(path.join(__dirname, 'game-interface')));
+
+// Ruta para el panel de administración
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'game-interface', 'admin-interface.html'));
+});
+
+// Ruta para la interfaz principal del juego
+app.get('/game', (req, res) => {
+    res.sendFile(path.join(__dirname, 'game-interface', 'index.html'));
+}); 

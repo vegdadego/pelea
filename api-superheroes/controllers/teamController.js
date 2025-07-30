@@ -279,4 +279,42 @@ router.delete('/equipos/:id', authMiddleware, async (req, res) => {
     res.json({ message: 'Equipo eliminado' });
 });
 
+/**
+ * @swagger
+ * /api/equipos/clear:
+ *   delete:
+ *     summary: Vacía todos los equipos (Solo Admin)
+ *     tags: [Equipos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Todos los equipos eliminados
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado - Solo admin
+ */
+// Vaciar todos los equipos (solo admin)
+router.delete('/equipos/clear', authMiddleware, async (req, res) => {
+    const user = req.user;
+    
+    if (!isAdmin(user)) {
+        return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden vaciar todos los equipos.' });
+    }
+    
+    try {
+        const result = await Team.deleteMany({});
+        res.json({ 
+            message: 'Todos los equipos han sido eliminados', 
+            deletedCount: result.deletedCount 
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Error al vaciar los equipos', 
+            details: error.message 
+        });
+    }
+});
+
 export default router; 
