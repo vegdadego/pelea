@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Endpoints - API Superhéroes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .btn.error {
+            background: #dc3545;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .endpoint-test {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .endpoint-test.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .endpoint-test.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Endpoints - API Superhéroes</h1>
+    
+    <div class="test-panel">
+        <h2>🌐 Probar Endpoints Disponibles</h2>
+        
+        <div>
+            <h3>GET Endpoints (Públicos)</h3>
+            <button class="btn" onclick="testEndpoint('GET', '/api/personajes/public')">GET /personajes/public</button>
+            <button class="btn" onclick="testEndpoint('GET', '/api/heroes')">GET /heroes</button>
+            <button class="btn" onclick="testEndpoint('GET', '/api/battles')">GET /battles</button>
+            <button class="btn" onclick="testEndpoint('GET', '/api/battles/heroes')">GET /battles/heroes</button>
+            <button class="btn" onclick="testEndpoint('GET', '/api/battles/teams')">GET /battles/teams</button>
+        </div>
+        
+        <div>
+            <h3>POST Endpoints (Requieren Auth)</h3>
+            <button class="btn" onclick="testAuthEndpoint('POST', '/api/auth/login', {user: 'test', password: 'test'})">POST /auth/login</button>
+            <button class="btn" onclick="testAuthEndpoint('POST', '/api/battles/1v1', {hero1Id: 1, hero2Id: 2})">POST /battles/1v1</button>
+
+            <button class="btn" onclick="testAuthEndpoint('POST', '/api/battles/action', {battleId: 'test', attackerId: 1, attackType: 'normal', targetId: 2})">POST /battles/action</button>
+        </div>
+        
+        <div>
+            <h3>Probar Todos los Endpoints</h3>
+            <button class="btn" onclick="testAllEndpoints()">Probar Todos</button>
+            <button class="btn" onclick="clearResults()">Limpiar Resultados</button>
+        </div>
+    </div>
+    
+    <div class="test-panel">
+        <h2>📊 Resultados de las Pruebas</h2>
+        <div id="results"></div>
+    </div>
+    
+    <div class="test-panel">
+        <h2>📜 Log Detallado</h2>
+        <div id="testLog" class="log">Los resultados detallados aparecerán aquí...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://pelea.onrender.com';
+        let authToken = localStorage.getItem('authToken');
+        
+        function addLog(message) {
+            const log = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('testLog').textContent = '';
+        }
+        
+        function addResult(endpoint, method, success, status, data) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `endpoint-test ${success ? 'success' : 'error'}`;
+            
+            const statusText = success ? '✅ FUNCIONA' : '❌ NO FUNCIONA';
+            const statusCode = status || 'N/A';
+            
+            div.innerHTML = `
+                <strong>${method} ${endpoint}</strong><br>
+                <span style="color: ${success ? 'green' : 'red'}">${statusText}</span> (${statusCode})<br>
+                <small>Respuesta: ${JSON.stringify(data).substring(0, 100)}${JSON.stringify(data).length > 100 ? '...' : ''}</small>
+            `;
+            
+            results.appendChild(div);
+        }
+        
+        async function testEndpoint(method, endpoint) {
+            addLog(`🔍 Probando ${method} ${endpoint}...`);
+            
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                const success = response.ok;
+                addLog(`${success ? '✅' : '❌'} ${method} ${endpoint}: ${response.status} ${response.statusText}`);
+                addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                
+                addResult(endpoint, method, success, response.status, jsonData);
+                
+            } catch (error) {
+                addLog(`❌ Error en ${method} ${endpoint}: ${error.message}`);
+                addResult(endpoint, method, false, 'ERROR', error.message);
+            }
+        }
+        
+        async function testAuthEndpoint(method, endpoint, body) {
+            addLog(`🔍 Probando ${method} ${endpoint} (con auth)...`);
+            
+            if (!authToken) {
+                addLog(`❌ No hay token de autenticación para ${endpoint}`);
+                addResult(endpoint, method, false, 'NO_AUTH', 'No hay token');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                const success = response.ok;
+                addLog(`${success ? '✅' : '❌'} ${method} ${endpoint}: ${response.status} ${response.statusText}`);
+                addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                
+                addResult(endpoint, method, success, response.status, jsonData);
+                
+            } catch (error) {
+                addLog(`❌ Error en ${method} ${endpoint}: ${error.message}`);
+                addResult(endpoint, method, false, 'ERROR', error.message);
+            }
+        }
+        
+        async function testAllEndpoints() {
+            clearResults();
+            addLog('🚀 Iniciando prueba de todos los endpoints...');
+            
+            // GET endpoints
+            await testEndpoint('GET', '/api/personajes/public');
+            await testEndpoint('GET', '/api/heroes');
+            await testEndpoint('GET', '/api/battles');
+            await testEndpoint('GET', '/api/battles/heroes');
+            await testEndpoint('GET', '/api/battles/teams');
+            
+            // POST endpoints (solo si hay auth)
+            if (authToken) {
+                await testAuthEndpoint('POST', '/api/battles/1v1', {hero1Id: 1, hero2Id: 2});
+
+                await testAuthEndpoint('POST', '/api/battles/action', {battleId: 'test', attackerId: 1, attackType: 'normal', targetId: 2});
+            } else {
+                addLog('⚠️ No hay token de autenticación, saltando endpoints POST');
+            }
+            
+            addLog('✅ Prueba de endpoints completada');
+        }
+        
+        // Inicialización
+        window.addEventListener('load', function() {
+            addLog('🚀 Test de endpoints iniciado');
+            addLog(`🔑 Token de auth: ${authToken ? 'Presente' : 'Ausente'}`);
+            if (authToken) {
+                addLog(`👤 Usuario: ${localStorage.getItem('currentUser') || 'No definido'}`);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Battle Format - API Superhéroes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .format-test {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Test Battle Format - API Superhéroes</h1>
+    
+    <div class="test-panel">
+        <h2>🔐 Autenticación</h2>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="email" placeholder="tu@email.com" value="test@test.com">
+        </div>
+        <div class="form-group">
+            <label>Contraseña:</label>
+            <input type="password" id="password" placeholder="contraseña" value="123456">
+        </div>
+        <button class="btn" onclick="login()">🔐 Iniciar Sesión</button>
+        <button class="btn" onclick="checkAuth()">🔍 Verificar Auth</button>
+    </div>
+    
+    <div class="test-panel">
+        <h2>⚔️ Probar Formatos de Batalla</h2>
+        
+        <div class="format-test">
+            <h3>Formato 1: char1Id, char2Id (Recomendado)</h3>
+            <div class="form-group">
+                <label>Char 1 ID:</label>
+                <input type="number" id="char1Id" value="1">
+            </div>
+            <div class="form-group">
+                <label>Char 2 ID:</label>
+                <input type="number" id="char2Id" value="2">
+            </div>
+            <button class="btn" onclick="testFormat1()">Probar Formato 1</button>
+        </div>
+        
+        <div class="format-test">
+            <h3>Formato 2: hero1Id, hero2Id</h3>
+            <div class="form-group">
+                <label>Hero 1 ID:</label>
+                <input type="number" id="hero1Id" value="1">
+            </div>
+            <div class="form-group">
+                <label>Hero 2 ID:</label>
+                <input type="number" id="hero2Id" value="2">
+            </div>
+            <button class="btn" onclick="testFormat2()">Probar Formato 2</button>
+        </div>
+        
+        <div class="format-test">
+            <h3>Formato 3: 3v3 con equipos</h3>
+            <div class="form-group">
+                <label>Attacker ID:</label>
+                <input type="number" id="attackerId" value="1">
+            </div>
+            <div class="form-group">
+                <label>Target ID:</label>
+                <input type="number" id="targetId" value="2">
+            </div>
+            <div class="form-group">
+                <label>Team 1 IDs (separados por coma):</label>
+                <input type="text" id="team1Ids" value="1,2,3">
+            </div>
+            <div class="form-group">
+                <label>Team 2 IDs (separados por coma):</label>
+                <input type="text" id="team2Ids" value="4,5,6">
+            </div>
+            <button class="btn" onclick="testFormat3()">Probar Formato 3v3</button>
+        </div>
+        
+        <div class="format-test">
+            <h3>Probar Todos los Formatos</h3>
+            <button class="btn" onclick="testAllFormats()">Probar Todos</button>
+        </div>
+    </div>
+    
+    <div class="test-panel">
+        <h2>📜 Log de Pruebas</h2>
+        <div id="testLog" class="log">Los resultados de las pruebas aparecerán aquí...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://pelea.onrender.com';
+        let authToken = localStorage.getItem('authToken');
+        
+        function addLog(message) {
+            const log = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('testLog').textContent = '';
+        }
+        
+        async function login() {
+            clearLog();
+            addLog('🔐 Iniciando sesión...');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                if (response.ok) {
+                    authToken = jsonData.token;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', email);
+                    addLog(`✅ Login exitoso: ${email}`);
+                    addLog(`🔑 Token: ${authToken.substring(0, 20)}...`);
+                } else {
+                    addLog(`❌ Error en login: ${response.status} ${response.statusText}`);
+                    addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error de conexión: ${error.message}`);
+            }
+        }
+        
+        function checkAuth() {
+            clearLog();
+            addLog('🔍 Verificando autenticación...');
+            
+            if (authToken) {
+                addLog(`✅ Token presente: ${authToken.substring(0, 20)}...`);
+                addLog(`👤 Usuario: ${localStorage.getItem('currentUser') || 'No definido'}`);
+            } else {
+                addLog(`❌ No hay token de autenticación`);
+            }
+        }
+        
+        async function testBattleFormat(payload, formatName) {
+            if (!authToken) {
+                addLog('❌ Necesitas estar autenticado');
+                return;
+            }
+            
+            addLog(`⚔️ Probando ${formatName}...`);
+            addLog(`📤 Payload: ${JSON.stringify(payload, null, 2)}`);
+            
+            // Determinar el endpoint según el formato
+            let endpoint = '/api/battles/1v1';
+            if (formatName.includes('3v3')) {
+                endpoint = '/api/battles/action';
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                addLog(`📡 Status: ${response.status} ${response.statusText}`);
+                addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                
+                if (response.ok) {
+                    addLog(`✅ ${formatName}: ÉXITO`);
+                } else {
+                    addLog(`❌ ${formatName}: FALLO`);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error en ${formatName}: ${error.message}`);
+            }
+        }
+        
+        function testFormat1() {
+            const char1Id = parseInt(document.getElementById('char1Id').value);
+            const char2Id = parseInt(document.getElementById('char2Id').value);
+            
+            const payload = {
+                char1Id: char1Id,
+                char2Id: char2Id
+            };
+            
+            testBattleFormat(payload, "Formato char1Id/char2Id");
+        }
+        
+        function testFormat2() {
+            const hero1Id = parseInt(document.getElementById('hero1Id').value);
+            const hero2Id = parseInt(document.getElementById('hero2Id').value);
+            
+            const payload = {
+                hero1Id: hero1Id,
+                hero2Id: hero2Id
+            };
+            
+            testBattleFormat(payload, "Formato hero1Id/hero2Id");
+        }
+        
+        function testFormat3() {
+            const attackerId = parseInt(document.getElementById('attackerId').value);
+            const targetId = parseInt(document.getElementById('targetId').value);
+            const team1Ids = document.getElementById('team1Ids').value.split(',').map(id => parseInt(id.trim()));
+            const team2Ids = document.getElementById('team2Ids').value.split(',').map(id => parseInt(id.trim()));
+            
+            const payload = {
+                attackerId: attackerId,
+                attackType: "normal",
+                targetId: targetId,
+                team1Ids: team1Ids,
+                team2Ids: team2Ids
+            };
+            
+            testBattleFormat(payload, "Formato 3v3 con equipos");
+        }
+        
+        async function testAllFormats() {
+            clearLog();
+            addLog('🚀 Probando todos los formatos...');
+            
+            await testFormat1();
+            addLog('---');
+            await testFormat2();
+            addLog('---');
+            await testFormat3();
+            
+            addLog('✅ Pruebas completadas');
+        }
+        
+        // Inicialización
+        window.addEventListener('load', function() {
+            addLog('🚀 Test de formatos de batalla iniciado');
+            addLog(`🔑 Token de auth: ${authToken ? 'Presente' : 'Ausente'}`);
+            if (authToken) {
+                addLog(`👤 Usuario: ${localStorage.getItem('currentUser') || 'No definido'}`);
+            }
+        });
+    </script>
+</body>
+</html> 

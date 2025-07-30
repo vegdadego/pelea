@@ -14,34 +14,163 @@
             <p>Combate por turnos estilo Pokémon</p>
         </div>
 
-        <!-- Pantalla de Inicio -->
-        <div id="startScreen" class="start-screen fade-in">
-            <h2>¡Bienvenido al Combate de Superhéroes!</h2>
-            <p>
-                En este emocionante juego de combate por turnos, podrás elegir tu personaje favorito 
-                y enfrentarte a otros superhéroes en batallas épicas. Cada personaje tiene habilidades 
-                únicas y estadísticas diferentes. ¡Elige sabiamente y demuestra tu estrategia!
-            </p>
-            <p>
-                <strong>Instrucciones:</strong><br>
-                1. Selecciona tu personaje favorito<br>
-                2. Elige tus movimientos estratégicamente<br>
-                3. ¡Combate hasta la victoria!
-            </p>
-            <button id="startBtn" class="btn">🚀 Comenzar Juego</button>
-        </div>
+        <!-- Pantalla de Autenticación -->
+        <div id="authScreen" class="auth-screen fade-in">
+            <div class="auth-container">
+                <h2>🔐 Acceso al Juego</h2>
+                <p>Inicia sesión o regístrate para comenzar la aventura</p>
+                
+                <!-- Formulario de Login -->
+                <div id="loginForm" class="auth-form active">
+                    <h3>🚀 Iniciar Sesión</h3>
+                    <form id="loginFormElement">
+                        <div class="form-group">
+                            <label for="loginUser">Usuario:</label>
+                            <input type="text" id="loginUser" name="user" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Contraseña:</label>
+                            <input type="password" id="loginPassword" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">🚀 Iniciar Sesión</button>
+                    </form>
+                    <p class="form-switch">
+                        ¿No tienes cuenta? 
+                        <a href="#" id="showRegister">Regístrate aquí</a>
+                    </p>
+                </div>
 
-        <!-- Pantalla de Selección -->
-        <div id="selectionScreen" class="selection-screen">
-            <h2>Selecciona tu Personaje</h2>
-            <div id="charactersGrid" class="characters-grid">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Cargando personajes...</p>
+                <!-- Formulario de Registro -->
+                <div id="registerForm" class="auth-form">
+                    <h3>📝 Registrarse</h3>
+                    <form id="registerFormElement">
+                        <div class="form-group">
+                            <label for="registerUser">Usuario:</label>
+                            <input type="text" id="registerUser" name="user" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerNombre">Nombre Completo:</label>
+                            <input type="text" id="registerNombre" name="nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">Contraseña:</label>
+                            <input type="password" id="registerPassword" name="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPasswordConfirm">Confirmar Contraseña:</label>
+                            <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">📝 Crear Cuenta</button>
+                    </form>
+                    <p class="form-switch">
+                        ¿Ya tienes cuenta? 
+                        <a href="#" id="showLogin">Inicia sesión aquí</a>
+                    </p>
                 </div>
             </div>
-            <div style="text-align: center;">
-                <button id="startBattleBtn" class="btn" disabled>⚔️ Iniciar Batalla</button>
+            
+            <!-- Mensajes de estado -->
+            <div id="messageContainer" class="message-container"></div>
+        </div>
+
+        <!-- Pantalla de Inicio -->
+        <div id="startScreen" class="start-screen">
+            <h2>¡Bienvenido al Combate de Superhéroes!</h2>
+            <div id="userInfo" class="user-info">
+                <p>Bienvenido, <span id="userName">Usuario</span>!</p>
+                <button id="logoutBtn" class="btn btn-secondary">🚪 Cerrar Sesión</button>
+            </div>
+            <div class="game-info">
+                <p>¡Bienvenido al emocionante mundo de las batallas de superhéroes! Selecciona tu modo de juego preferido.</p>
+            </div>
+            <div class="game-modes">
+                <button id="startBtn1v1" class="btn btn-primary">⚔️ Batalla 1v1</button>
+                <button id="startBtn3v3" class="btn">⚔️⚔️⚔️ Batalla 3v3</button>
+            </div>
+            
+            <div class="mode-descriptions">
+                <div class="mode-card">
+                    <h3>⚔️ Batalla 1v1</h3>
+                    <p>Selecciona tu personaje y el enemigo para una batalla épica uno contra uno.</p>
+                </div>
+                <div class="mode-card">
+                    <h3>⚔️⚔️⚔️ Batalla 3v3</h3>
+                    <p>Forma tu equipo de 3 personajes y enfrenta al equipo enemigo en una batalla por turnos.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Selección 1v1 -->
+        <div id="selectionScreen1v1" class="selection-screen">
+            <h2>Selecciona los Personajes (1v1)</h2>
+            <div class="team-selection-1v1">
+                <div class="team-section">
+                    <h3>🎯 Tu Personaje</h3>
+                    <div id="selectedCharacter1v1" class="selected-character">
+                        <div class="character-slot empty">Selecciona tu personaje</div>
+                    </div>
+                </div>
+                
+                <div class="team-section">
+                    <h3>👹 Personaje Enemigo</h3>
+                    <div id="selectedEnemy1v1" class="selected-character">
+                        <div class="character-slot empty">Selecciona el enemigo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="characters-section">
+                <h3>📋 Personajes Disponibles</h3>
+                <div id="charactersGrid1v1" class="characters-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Cargando personajes...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="startBattleBtn1v1" class="btn" disabled>⚔️ Iniciar Batalla 1v1</button>
+                <button id="clearSelection1v1" class="btn btn-secondary">🔄 Limpiar Selección</button>
+            </div>
+        </div>
+
+        <!-- Pantalla de Selección 3v3 -->
+        <div id="selectionScreen3v3" class="selection-screen">
+            <h2>Selecciona los Equipos (3v3)</h2>
+            <div class="teams-selection">
+                <div class="team-section">
+                    <h3>🎯 Tu Equipo (0/3)</h3>
+                    <div id="selectedTeam" class="selected-team">
+                        <div class="team-slot empty">Slot 1</div>
+                        <div class="team-slot empty">Slot 2</div>
+                        <div class="team-slot empty">Slot 3</div>
+                    </div>
+                </div>
+                
+                <div class="team-section">
+                    <h3>👹 Equipo Enemigo (0/3)</h3>
+                    <div id="selectedEnemyTeam" class="selected-team">
+                        <div class="team-slot empty">Slot 1</div>
+                        <div class="team-slot empty">Slot 2</div>
+                        <div class="team-slot empty">Slot 3</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="characters-section">
+                <h3>📋 Personajes Disponibles</h3>
+                <div id="charactersGrid3v3" class="characters-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Cargando personajes...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="startBattleBtn3v3" class="btn" disabled>⚔️⚔️⚔️ Iniciar Batalla 3v3</button>
+                <button id="clearSelection3v3" class="btn btn-secondary">🔄 Limpiar Selección</button>
             </div>
         </div>
 
@@ -50,43 +179,91 @@
             <div class="battle-header">
                 <h2>⚔️ Batalla en Curso</h2>
                 <div id="turnIndicator" class="turn-indicator">Tu turno</div>
+                <div class="battle-controls-top">
+                    <button id="simulateBattleBtn" class="btn btn-secondary">🏁 Simular Batalla Completa</button>
+                    <button id="backToSelectionBtn" class="btn btn-secondary">🔄 Nueva Batalla</button>
+                </div>
             </div>
 
             <div class="battle-field">
-                <!-- Personaje del Jugador -->
-                <div class="character-battle">
-                    <h3 id="playerName">Tu Personaje</h3>
-                    <div class="health-bar">
-                        <div id="playerHealth" class="health-fill" style="width: 100%;"></div>
+                <!-- Equipo del Jugador -->
+                <div class="team-battle player-team">
+                    <h3>🎯 Tu Equipo</h3>
+                    <div id="playerTeam" class="team-members">
+                        <!-- Los miembros del equipo se cargarán dinámicamente -->
                     </div>
-                    <div class="health-text" id="playerHealthText">100 / 100 HP</div>
-                    <div id="playerStatus">Estado: Normal</div>
                 </div>
 
-                <!-- Personaje del Enemigo -->
-                <div class="character-battle">
-                    <h3 id="enemyName">Enemigo</h3>
-                    <div class="health-bar">
-                        <div id="enemyHealth" class="health-fill" style="width: 100%;"></div>
+                <!-- Equipo del Enemigo -->
+                <div class="team-battle enemy-team">
+                    <h3>👹 Equipo Enemigo</h3>
+                    <div id="enemyTeam" class="team-members">
+                        <!-- Los miembros del equipo enemigo se cargarán dinámicamente -->
                     </div>
-                    <div class="health-text" id="enemyHealthText">100 / 100 HP</div>
-                    <div id="enemyStatus">Estado: Normal</div>
                 </div>
             </div>
 
             <div class="battle-controls">
-                <h3>Movimientos Disponibles</h3>
-                <div id="movesGrid" class="moves-grid">
-                    <button class="move-btn" data-move="normal">Ataque Normal</button>
-                    <button class="move-btn" data-move="especial">Ataque Especial</button>
-                    <button class="move-btn" data-move="ultimate">Ataque Ultimate</button>
+                <h3>Acciones Disponibles</h3>
+                <div class="battle-actions">
+                    <div class="action-group">
+                        <h4>⚔️ Turno Actual</h4>
+                        <div id="currentTurnInfo" class="turn-info">
+                            <!-- Información del turno actual -->
+                        </div>
+                        <div id="movesGrid" class="moves-grid">
+                            <button class="move-btn" data-move="normal">Ataque Normal</button>
+                            <button class="move-btn" data-move="especial">Ataque Especial</button>
+                            <button class="move-btn" data-move="ultimate">Ataque Ultimate</button>
+                        </div>
+                        <button id="attackBtn" class="btn">⚔️ Realizar Ataque</button>
+                    </div>
+                    
+                    <div class="action-group">
+                        <h4>🎲 Simulación</h4>
+                        <button id="nextRoundBtn" class="btn btn-secondary">⏭️ Siguiente Round</button>
+                        <button id="autoPlayBtn" class="btn btn-secondary">▶️ Auto Play</button>
+                        <div class="turn-controls">
+                            <button id="switchTurnBtn" class="btn btn-secondary">🔄 Cambiar Turno</button>
+                        </div>
+                    </div>
                 </div>
-                <button id="attackBtn" class="btn">⚔️ Realizar Ataque</button>
             </div>
 
             <div class="battle-log">
                 <h3>📜 Registro de Batalla</h3>
                 <div id="battleLog"></div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Recapitulación -->
+        <div id="recapScreen" class="recap-screen">
+            <div class="recap-header">
+                <h2>🏆 Recapitulación de la Batalla</h2>
+                <div id="battleResult" class="battle-result">
+                    <!-- El resultado se mostrará aquí -->
+                </div>
+            </div>
+
+            <div class="recap-content">
+                <div class="recap-stats">
+                    <h3>📊 Estadísticas de la Batalla</h3>
+                    <div id="battleStats" class="stats-grid">
+                        <!-- Las estadísticas se mostrarán aquí -->
+                    </div>
+                </div>
+
+                <div class="recap-rounds">
+                    <h3>📜 Rounds de la Batalla</h3>
+                    <div id="roundsLog" class="rounds-log">
+                        <!-- Los rounds se mostrarán aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="recap-actions">
+                <button id="newBattleBtn" class="btn btn-primary">⚔️ Nueva Batalla</button>
+                <button id="backToMenuBtn" class="btn btn-secondary">🏠 Volver al Menú</button>
             </div>
         </div>
     </div>

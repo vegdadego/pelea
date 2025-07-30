@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Endpoint Action - API Superhéroes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .btn.error {
+            background: #dc3545;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Test Endpoint Action - API Superhéroes</h1>
+    
+    <div class="test-panel">
+        <h2>🔐 Autenticación</h2>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="email" placeholder="tu@email.com" value="test@test.com">
+        </div>
+        <div class="form-group">
+            <label>Contraseña:</label>
+            <input type="password" id="password" placeholder="contraseña" value="123456">
+        </div>
+        <button class="btn" onclick="login()">🔐 Iniciar Sesión</button>
+        <button class="btn" onclick="checkAuth()">🔍 Verificar Auth</button>
+    </div>
+    
+    <div class="test-panel">
+        <h2>⚔️ Probar Endpoint Action</h2>
+        <div class="form-group">
+            <label>Battle ID:</label>
+            <input type="text" id="battleId" placeholder="ID de la batalla" value="battle_123">
+        </div>
+        <div class="form-group">
+            <label>Attacker ID:</label>
+            <input type="number" id="attackerId" placeholder="ID del atacante" value="1">
+        </div>
+        <div class="form-group">
+            <label>Tipo de Ataque:</label>
+            <select id="attackType">
+                <option value="normal">Normal</option>
+                <option value="especial">Especial</option>
+                <option value="ultimate">Ultimate</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Target ID:</label>
+            <input type="number" id="targetId" placeholder="ID del objetivo" value="2">
+        </div>
+        <div class="form-group">
+            <label>Team 1 IDs (3v3):</label>
+            <input type="text" id="team1Ids" placeholder="1,2,3" value="1,2,3">
+        </div>
+        <div class="form-group">
+            <label>Team 2 IDs (3v3):</label>
+            <input type="text" id="team2Ids" placeholder="4,5,6" value="4,5,6">
+        </div>
+        
+        <button class="btn" onclick="testAction1v1()">⚔️ Probar Action 1v1</button>
+        <button class="btn" onclick="testAction3v3()">⚔️⚔️⚔️ Probar Action 3v3</button>
+        <button class="btn" onclick="testActionSimple()">🎯 Probar Action Simple</button>
+    </div>
+    
+    <div class="test-panel">
+        <h2>📜 Log de Pruebas</h2>
+        <div id="testLog" class="log">Los resultados de las pruebas aparecerán aquí...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://pelea.onrender.com';
+        let authToken = localStorage.getItem('authToken');
+        
+        function addLog(message) {
+            const log = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('testLog').textContent = '';
+        }
+        
+        async function login() {
+            clearLog();
+            addLog('🔐 Iniciando sesión...');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                if (response.ok) {
+                    authToken = jsonData.token;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', email);
+                    addLog(`✅ Login exitoso: ${email}`);
+                    addLog(`🔑 Token: ${authToken.substring(0, 20)}...`);
+                } else {
+                    addLog(`❌ Error en login: ${response.status} ${response.statusText}`);
+                    addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error de conexión: ${error.message}`);
+            }
+        }
+        
+        function checkAuth() {
+            clearLog();
+            addLog('🔍 Verificando autenticación...');
+            
+            if (authToken) {
+                addLog(`✅ Token presente: ${authToken.substring(0, 20)}...`);
+                addLog(`👤 Usuario: ${localStorage.getItem('currentUser') || 'No definido'}`);
+            } else {
+                addLog(`❌ No hay token de autenticación`);
+            }
+        }
+        
+        async function testAction1v1() {
+            if (!authToken) {
+                addLog('❌ Necesitas estar autenticado');
+                return;
+            }
+            
+            clearLog();
+            addLog('⚔️ Probando Action 1v1...');
+            
+            const battleId = document.getElementById('battleId').value;
+            const attackerId = parseInt(document.getElementById('attackerId').value);
+            const attackType = document.getElementById('attackType').value;
+            const targetId = parseInt(document.getElementById('targetId').value);
+            
+            const payload = {
+                battleId: battleId,
+                attackerId: attackerId,
+                attackType: attackType,
+                targetId: targetId
+            };
+            
+            addLog(`📤 Payload: ${JSON.stringify(payload, null, 2)}`);
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/battles/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                addLog(`📡 Status: ${response.status} ${response.statusText}`);
+                addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function testAction3v3() {
+            if (!authToken) {
+                addLog('❌ Necesitas estar autenticado');
+                return;
+            }
+            
+            clearLog();
+            addLog('⚔️⚔️⚔️ Probando Action 3v3...');
+            
+            const battleId = document.getElementById('battleId').value;
+            const attackerId = parseInt(document.getElementById('attackerId').value);
+            const attackType = document.getElementById('attackType').value;
+            const targetId = parseInt(document.getElementById('targetId').value);
+            const team1Ids = document.getElementById('team1Ids').value.split(',').map(id => parseInt(id.trim()));
+            const team2Ids = document.getElementById('team2Ids').value.split(',').map(id => parseInt(id.trim()));
+            
+            const payload = {
+                battleId: battleId,
+                attackerId: attackerId,
+                attackType: attackType,
+                targetId: targetId,
+                team1Ids: team1Ids,
+                team2Ids: team2Ids
+            };
+            
+            addLog(`📤 Payload: ${JSON.stringify(payload, null, 2)}`);
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/battles/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                addLog(`📡 Status: ${response.status} ${response.statusText}`);
+                addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function testActionSimple() {
+            if (!authToken) {
+                addLog('❌ Necesitas estar autenticado');
+                return;
+            }
+            
+            clearLog();
+            addLog('🎯 Probando Action Simple...');
+            
+            const payload = {
+                battleId: "test_battle",
+                attackerId: 1,
+                attackType: "normal",
+                targetId: 2
+            };
+            
+            addLog(`📤 Payload: ${JSON.stringify(payload, null, 2)}`);
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/battles/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                addLog(`📡 Status: ${response.status} ${response.statusText}`);
+                addLog(`📄 Respuesta: ${JSON.stringify(jsonData, null, 2)}`);
+                
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`);
+            }
+        }
+        
+        // Inicialización
+        window.addEventListener('load', function() {
+            addLog('🚀 Test de endpoint action iniciado');
+            addLog(`🔑 Token de auth: ${authToken ? 'Presente' : 'Ausente'}`);
+            if (authToken) {
+                addLog(`👤 Usuario: ${localStorage.getItem('currentUser') || 'No definido'}`);
+            }
+        });
+    </script>
+</body>
+</html> 
