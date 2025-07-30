@@ -473,12 +473,39 @@ class BattleService {
         battle.logs.push(mensajeJugador);
         if (mensajeEnemigo) battle.logs.push(mensajeEnemigo);
         await battle.save();
+        
+        // Obtener el estado actualizado de la batalla
+        const updatedBattleState = {
+            id: battle._id,
+            type: battle.type,
+            equipo1: battle.equipo1,
+            equipo2: battle.equipo2,
+            currentTurn: battle.currentTurn,
+            currentTeamTurn: battle.currentTeamTurn,
+            remainingActions: battle.remainingActions,
+            currentRound: battle.currentRound,
+            characterStates: battle.currentCharacterStates,
+            rounds: battle.rounds,
+            isFinished: battle.isFinished,
+            battleStatus: battle.battleStatus,
+            winner: battle.winner,
+            loser: battle.loser,
+            startTime: battle.startTime,
+            endTime: battle.endTime,
+            active1: battle.active1,
+            active2: battle.active2,
+            activeIndex1: battle.activeIndex1,
+            activeIndex2: battle.activeIndex2,
+            turnoActual: battle.turnoActual
+        };
+        
         return {
             turnoJugador: mensajeJugador,
             turnoEnemigo: mensajeEnemigo,
             estadoCombate: battle.isFinished ? 'Finalizado' : 'En curso',
             siguienteTurno: battle.isFinished ? null : 'jugador',
-            ganador: battle.isFinished ? battle.winner : null
+            ganador: battle.isFinished ? battle.winner : null,
+            battleState: updatedBattleState
         };
     }
 
