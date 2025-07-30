@@ -104,6 +104,15 @@ export function filterBattleStateForUser(battleState, user) {
         currentTurn: battleState.currentTurn,
         currentTeamTurn: battleState.currentTeamTurn,
         remainingActions: battleState.remainingActions,
+        // Campos necesarios para 3v3
+        active1: battleState.active1,
+        active2: battleState.active2,
+        activeIndex1: battleState.activeIndex1,
+        activeIndex2: battleState.activeIndex2,
+        turnoActual: battleState.turnoActual,
+        // Incluir información de equipos para 3v3
+        equipo1: battleState.equipo1,
+        equipo2: battleState.equipo2,
         // Solo información básica de personajes
         characterStates: battleState.characterStates.map(char => ({
             id: char.id,

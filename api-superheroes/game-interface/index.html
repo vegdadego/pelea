@@ -211,6 +211,26 @@
                         <div id="currentTurnInfo" class="turn-info">
                             <!-- Información del turno actual -->
                         </div>
+                        
+                        <!-- Nueva sección para selección manual de atacante y objetivo -->
+                        <div class="manual-selection">
+                            <h4>🎯 Selección Manual</h4>
+                            <div class="selection-info">
+                                <div class="selection-item">
+                                    <label>Atacante:</label>
+                                    <span id="selectedAttacker">No seleccionado</span>
+                                </div>
+                                <div class="selection-item">
+                                    <label>Objetivo:</label>
+                                    <span id="selectedTarget">No seleccionado</span>
+                                </div>
+                            </div>
+                            <div class="selection-instructions">
+                                <p>💡 Haz clic en un personaje de tu equipo para seleccionar atacante</p>
+                                <p>💡 Haz clic en un personaje enemigo para seleccionar objetivo</p>
+                            </div>
+                        </div>
+                        
                         <div id="movesGrid" class="moves-grid">
                             <button class="move-btn" data-move="normal">Ataque Normal</button>
                             <button class="move-btn" data-move="especial">Ataque Especial</button>

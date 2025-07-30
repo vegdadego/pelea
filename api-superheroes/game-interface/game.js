@@ -22,6 +22,11 @@ class SuperheroesBattle {
         this.battleStats = {}; // Estadísticas de la batalla
         this.currentTurn = 'player'; // 'player' o 'enemy'
 
+        // Manual selection properties
+        this.selectedAttacker = null;
+        this.selectedTarget = null;
+        this.isManualSelectionEnabled = false;
+
         // Elementos del DOM
         this.elements = {
             // Pantallas
@@ -70,6 +75,12 @@ class SuperheroesBattle {
             battleResult: document.getElementById('battleResult'),
             battleStats: document.getElementById('battleStats'),
             roundsLog: document.getElementById('roundsLog')
+        };
+
+        // Manual selection elements
+        this.manualSelectionElements = {
+            selectedAttacker: document.getElementById('selectedAttacker'),
+            selectedTarget: document.getElementById('selectedTarget')
         };
 
         // Verificar elementos críticos
@@ -133,6 +144,15 @@ class SuperheroesBattle {
         document.querySelectorAll('.move-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.selectMove(e.target));
         });
+
+        // Event listeners para selección manual de atacante y objetivo
+        this.initializeManualSelectionListeners();
+    }
+
+    // Inicializar event listeners para selección manual
+    initializeManualSelectionListeners() {
+        // Los event listeners se agregarán dinámicamente cuando se rendericen los personajes
+        console.log('🎯 Inicializando event listeners para selección manual');
     }
 
     // Verificar estado de autenticación
@@ -362,13 +382,49 @@ class SuperheroesBattle {
                 console.log(`Personajes ya cargados (${this.availableCharacters.length}), saltando carga...`);
             }
             
-            this.showScreen(mode === '1v1' ? 'selection1v1' : 'selection3v3');
-            this.showGameMessage(`🎮 ${mode === '1v1' ? 'Selecciona tu personaje y el enemigo.' : 'Selecciona tu equipo de 3 personajes y el equipo enemigo.'}`, 'info');
-
+            // Limpiar selecciones previas
+            if (mode === '1v1') {
+                this.selectedCharacter = null;
+                this.selectedEnemy = null;
+                this.clearSelection1v1();
+            } else {
+                this.selectedTeam = [];
+                this.selectedEnemyTeam = [];
+                this.clearSelection3v3();
+            }
+            
+            // Mostrar pantalla de selección específica y ocultar la otra
+            if (mode === '1v1') {
+                this.showScreen('selection1v1');
+                // Asegurar que la pantalla 3v3 esté oculta
+                if (this.elements.selectionScreen3v3) {
+                    this.elements.selectionScreen3v3.style.display = 'none';
+                }
+            } else {
+                this.showScreen('selection3v3');
+                // Asegurar que la pantalla 1v1 esté oculta
+                if (this.elements.selectionScreen1v1) {
+                    this.elements.selectionScreen1v1.style.display = 'none';
+                }
+            }
+            
+            // Renderizar personajes
+            this.renderCharacters();
+            
+            // Inicializar estado de botones
+            this.updateBattleButtonState();
+            
+            console.log(`✅ Pantalla de selección ${mode} cargada exitosamente`);
+            console.log(`🔒 Pantalla de selección ${mode === '1v1' ? '3v3' : '1v1'} oculta`);
+            
+            // Verificar estado de visibilidad después del cambio
+            this.checkScreenVisibility();
+            
         } catch (error) {
             console.error('Error en startGame:', error);
-            this.showGameMessage(`Error al cargar personajes: ${error.message}`, 'error');
+            this.showGameMessage(`Error al cargar el juego: ${error.message}`, 'error');
             
+            // Restaurar botones en caso de error
             if (mode === '1v1') {
                 this.elements.startBtn1v1.disabled = false;
                 this.elements.startBtn1v1.textContent = '⚔️ Batalla 1v1';
@@ -424,23 +480,55 @@ class SuperheroesBattle {
     createCharacterCard(character, mode) {
         const card = document.createElement('div');
         card.className = 'character-card';
+        
+        // Determinar el color del tipo de personaje
+        const typeColors = {
+            'heroe': '#4299e1',
+            'villano': '#f56565',
+            'antiheroe': '#ed8936',
+            'neutral': '#718096'
+        };
+        
+        const typeColor = typeColors[character.tipo?.toLowerCase()] || '#4299e1';
+        
         card.innerHTML = `
-            <h3>${character.alias || character.nombre}</h3>
-            <p><strong>${character.nombre}</strong></p>
-            <p>Tipo: ${character.tipo}</p>
+            <div class="character-header">
+                <h3>${character.alias || character.nombre}</h3>
+                <div class="character-type" style="background: linear-gradient(135deg, ${typeColor}, ${typeColor}dd);">
+                    ${character.tipo?.toUpperCase() || 'HEROE'}
+                </div>
+            </div>
+            <div class="character-info">
+                <p class="character-name"><strong>${character.nombre}</strong></p>
+                <p class="character-description">${character.descripcion || 'Un valiente luchador en busca de la victoria.'}</p>
+            </div>
             <div class="character-stats">
                 <div class="stat">
-                    <span>❤️ HP:</span> ${character.stats.health}
+                    <span class="stat-icon">❤️</span>
+                    <span class="stat-value">${character.stats.health}</span>
+                    <span class="stat-label">HP</span>
                 </div>
                 <div class="stat">
-                    <span>⚔️ ATK:</span> ${character.stats.attack}
+                    <span class="stat-icon">⚔️</span>
+                    <span class="stat-value">${character.stats.attack}</span>
+                    <span class="stat-label">ATK</span>
                 </div>
                 <div class="stat">
-                    <span>🛡️ DEF:</span> ${character.stats.defense}
+                    <span class="stat-icon">🛡️</span>
+                    <span class="stat-value">${character.stats.defense}</span>
+                    <span class="stat-label">DEF</span>
                 </div>
                 <div class="stat">
-                    <span>⚡ SPD:</span> ${character.stats.speed}
+                    <span class="stat-icon">⚡</span>
+                    <span class="stat-value">${character.stats.speed}</span>
+                    <span class="stat-label">SPD</span>
                 </div>
+            </div>
+            <div class="character-power">
+                <div class="power-bar">
+                    <div class="power-fill" style="width: ${(character.stats.attack + character.stats.defense + character.stats.speed) / 3}%"></div>
+                </div>
+                <span class="power-text">Poder: ${Math.round((character.stats.attack + character.stats.defense + character.stats.speed) / 3)}</span>
             </div>
         `;
         
@@ -480,10 +568,8 @@ class SuperheroesBattle {
             return;
         }
 
-        // Habilitar botón de inicio si ambos están seleccionados
-        if (this.selectedCharacter && this.selectedEnemy) {
-            this.elements.startBattleBtn1v1.disabled = false;
-        }
+        // Verificar y actualizar estado de botones
+        this.updateBattleButtonState();
     }
 
     // Actualizar visualización de personaje 1v1
@@ -517,7 +603,8 @@ class SuperheroesBattle {
             this.elements.selectedEnemy1v1.querySelector('.character-slot').textContent = 'Selecciona el enemigo';
         }
         
-        this.elements.startBattleBtn1v1.disabled = true;
+        // Verificar y actualizar estado de botones
+        this.updateBattleButtonState();
         this.showGameMessage(`❌ Personaje removido del equipo ${team === 'player' ? 'jugador' : 'enemigo'}`, 'info');
     }
 
@@ -551,9 +638,28 @@ class SuperheroesBattle {
             return;
         }
 
-        // Habilitar botón de inicio si ambos equipos están completos
+        // Verificar y actualizar estado de botones
+        this.updateBattleButtonState();
+    }
+
+    // Verificar y actualizar estado de botones de batalla
+    updateBattleButtonState() {
+        // Para 1v1
+        if (this.selectedCharacter && this.selectedEnemy) {
+            this.elements.startBattleBtn1v1.disabled = false;
+            this.elements.startBattleBtn1v1.textContent = '⚔️ Iniciar Batalla 1v1';
+        } else {
+            this.elements.startBattleBtn1v1.disabled = true;
+            this.elements.startBattleBtn1v1.textContent = '⚔️ Iniciar Batalla 1v1';
+        }
+
+        // Para 3v3
         if (this.selectedTeam.length === 3 && this.selectedEnemyTeam.length === 3) {
             this.elements.startBattleBtn3v3.disabled = false;
+            this.elements.startBattleBtn3v3.textContent = '⚔️⚔️⚔️ Iniciar Batalla 3v3';
+        } else {
+            this.elements.startBattleBtn3v3.disabled = true;
+            this.elements.startBattleBtn3v3.textContent = '⚔️⚔️⚔️ Iniciar Batalla 3v3';
         }
     }
 
@@ -603,7 +709,8 @@ class SuperheroesBattle {
         teamArray.splice(index, 1);
         this.updateTeamDisplay(team);
         
-        this.elements.startBattleBtn3v3.disabled = true;
+        // Verificar y actualizar estado de botones
+        this.updateBattleButtonState();
         this.showGameMessage(`❌ ${removedCharacter.alias || removedCharacter.nombre} removido del ${team === 'player' ? 'tu equipo' : 'equipo enemigo'}`, 'info');
     }
 
@@ -618,7 +725,8 @@ class SuperheroesBattle {
         this.elements.selectedEnemy1v1.querySelector('.character-slot').className = 'character-slot empty';
         this.elements.selectedEnemy1v1.querySelector('.character-slot').textContent = 'Selecciona el enemigo';
         
-        this.elements.startBattleBtn1v1.disabled = true;
+        // Verificar y actualizar estado de botones
+        this.updateBattleButtonState();
         this.showGameMessage('🔄 Selección 1v1 limpiada', 'info');
     }
 
@@ -630,7 +738,8 @@ class SuperheroesBattle {
         this.updateTeamDisplay('player');
         this.updateTeamDisplay('enemy');
         
-        this.elements.startBattleBtn3v3.disabled = true;
+        // Verificar y actualizar estado de botones
+        this.updateBattleButtonState();
         this.showGameMessage('🔄 Selección 3v3 limpiada', 'info');
     }
 
@@ -646,6 +755,9 @@ class SuperheroesBattle {
             playerTeam: this.selectedTeam,
             enemyTeam: this.selectedEnemyTeam
         });
+
+        // Resetear selección manual al iniciar nueva batalla
+        this.disableManualSelection();
 
         if (mode === '1v1' && (!this.selectedCharacter || !this.selectedEnemy)) {
             console.log('❌ Validación 1v1 falló');
@@ -687,17 +799,33 @@ class SuperheroesBattle {
                 battleData = await this.apiCall('/battles/1v1', 'POST', battlePayload);
                 console.log('Respuesta de batalla 1v1:', battleData);
             } else {
-                // Para 3v3, usar directamente /battles/action con los equipos
-                const actionPayload = {
-                    attackerId: parseInt(this.selectedTeam[0].id),
-                    attackType: "normal",
-                    targetId: parseInt(this.selectedEnemyTeam[0].id),
-                    team1Ids: this.selectedTeam.map(c => parseInt(c.id)),
-                    team2Ids: this.selectedEnemyTeam.map(c => parseInt(c.id))
-                };
-                console.log('Iniciando batalla 3v3 con:', actionPayload);
+                // Para 3v3, primero crear los equipos y luego iniciar la batalla
+                console.log('Creando equipos para batalla 3v3...');
                 
-                battleData = await this.apiCall('/battles/action', 'POST', actionPayload);
+                // Crear equipo del jugador
+                const team1Payload = {
+                    nombre: `Equipo Jugador ${Date.now()}`,
+                    miembros: this.selectedTeam.map(c => parseInt(c.id))
+                };
+                const team1Response = await this.apiCall('/equipos', 'POST', team1Payload);
+                console.log('Equipo 1 creado:', team1Response);
+                
+                // Crear equipo enemigo
+                const team2Payload = {
+                    nombre: `Equipo Enemigo ${Date.now()}`,
+                    miembros: this.selectedEnemyTeam.map(c => parseInt(c.id))
+                };
+                const team2Response = await this.apiCall('/equipos', 'POST', team2Payload);
+                console.log('Equipo 2 creado:', team2Response);
+                
+                // Iniciar batalla con los IDs de los equipos
+                const battlePayload = {
+                    equipo1Id: team1Response.id,
+                    equipo2Id: team2Response.id
+                };
+                console.log('Iniciando batalla 3v3 con:', battlePayload);
+                
+                battleData = await this.apiCall('/battles/team-vs-team', 'POST', battlePayload);
                 console.log('Respuesta de batalla 3v3:', battleData);
             }
 
@@ -751,10 +879,19 @@ class SuperheroesBattle {
     // Cargar estado de la batalla
     async loadBattleState() {
         try {
-            const battleState = await this.apiCall(`/battles/${this.currentBattleId}`);
-            this.currentBattleState = battleState;
-            this.updateBattleUI(battleState);
+            console.log('🔄 Cargando estado de batalla para ID:', this.currentBattleId);
+            const response = await this.apiCall(`/battles/${this.currentBattleId}/state`);
+            console.log('🔍 Respuesta completa del servidor:', response);
+            console.log('🔍 Estado de batalla recibido:', response.battleState);
+            this.currentBattleState = response.battleState;
+            
+            // Resetear selección manual al cargar nuevo estado
+            this.disableManualSelection();
+            
+            console.log('🎨 Actualizando UI de batalla...');
+            this.updateBattleUI(response.battleState);
             this.updateTurnInfo(); // Inicializar información del turno
+            console.log('✅ Estado de batalla cargado y UI actualizada');
         } catch (error) {
             console.error('Error en loadBattleState:', error);
             this.showGameMessage(`Error al cargar estado de batalla: ${error.message}`, 'error');
@@ -763,11 +900,14 @@ class SuperheroesBattle {
 
     // Actualizar interfaz de batalla
     updateBattleUI(battleState) {
-        console.log('Actualizando UI con estado:', battleState);
+        console.log('🎨 Actualizando UI con estado:', battleState);
+        console.log('🎮 Modo de batalla actual:', this.battleMode);
         
         if (this.battleMode === '1v1') {
+            console.log('⚔️ Actualizando UI para batalla 1v1');
             this.update1v1BattleUI(battleState);
         } else {
+            console.log('⚔️⚔️⚔️ Actualizando UI para batalla 3v3');
             this.update3v3BattleUI(battleState);
         }
     }
@@ -803,41 +943,316 @@ class SuperheroesBattle {
         const isPlayerTurn = battleState.turnoActual === 'jugador' || battleState.currentTurn === 'player';
         this.elements.turnIndicator.textContent = isPlayerTurn ? 'Tu turno' : 'Turno del enemigo';
         this.elements.attackBtn.disabled = !isPlayerTurn;
+
+        // Habilitar selección manual para 1v1
+        this.enableManualSelection();
+    }
+
+    // Helper function para convertir IDs de personajes a objetos completos
+    getCharacterById(characterId) {
+        if (!this.availableCharacters || !Array.isArray(this.availableCharacters)) {
+            console.warn('⚠️ availableCharacters no está disponible o no es un array');
+            return null;
+        }
+        return this.availableCharacters.find(char => char.id === characterId);
+    }
+
+    // Helper function para convertir array de IDs a array de objetos de personajes
+    getCharactersFromIds(characterIds) {
+        if (!Array.isArray(characterIds)) {
+            console.warn('⚠️ characterIds no es un array:', characterIds);
+            return [];
+        }
+        
+        if (!this.availableCharacters || !Array.isArray(this.availableCharacters)) {
+            console.error('❌ availableCharacters no está disponible para buscar personajes');
+            return [];
+        }
+        
+        return characterIds.map(id => {
+            const character = this.getCharacterById(id);
+            if (!character) {
+                console.warn(`⚠️ Personaje con ID ${id} no encontrado en el cache`);
+                return null;
+            }
+            return character;
+        }).filter(char => char !== null);
     }
 
     // Actualizar UI para batalla 3v3
     update3v3BattleUI(battleState) {
-        const team1 = battleState.team1 || battleState.heroes1 || [];
-        const team2 = battleState.team2 || battleState.heroes2 || [];
+        // Verificar que los personajes estén disponibles
+        if (!this.availableCharacters || !Array.isArray(this.availableCharacters)) {
+            console.error('❌ No se pueden actualizar personajes: availableCharacters no está disponible');
+            this.elements.playerTeam.innerHTML = '<div class="error">Error: Personajes no disponibles</div>';
+            this.elements.enemyTeam.innerHTML = '<div class="error">Error: Personajes no disponibles</div>';
+            return;
+        }
+        
+        const team1Ids = battleState.equipo1?.miembros || battleState.team1 || battleState.heroes1 || [];
+        const team2Ids = battleState.equipo2?.miembros || battleState.team2 || battleState.heroes2 || [];
+
+        console.log('Equipo 1 IDs:', team1Ids);
+        console.log('Equipo 2 IDs:', team2Ids);
+
+        // Convertir IDs a objetos de personajes completos
+        const team1 = this.getCharactersFromIds(team1Ids);
+        const team2 = this.getCharactersFromIds(team2Ids);
+
+        console.log('Equipo 1 personajes completos:', team1);
+        console.log('Equipo 2 personajes completos:', team2);
 
         // Renderizar equipo del jugador
-        this.elements.playerTeam.innerHTML = team1.map(hero => `
-            <div class="team-member ${hero.hp > 0 ? 'active' : 'dead'}">
-                <h4>${hero.alias || hero.nombre}</h4>
-                <div class="health-bar">
-                    <div class="health-fill" style="width: ${hero.hp / hero.maxHp * 100}%"></div>
+        this.elements.playerTeam.innerHTML = team1.map(hero => {
+            // Usar fallbacks para hp y maxHp como en 1v1
+            const currentHp = hero.hp || hero.health || 100; // Default a 100 si no hay datos de batalla
+            const maxHp = hero.maxHp || hero.maxHealth || 100;
+            const isAlive = currentHp > 0;
+            
+            console.log(`Personaje ${hero.alias || hero.nombre}: HP=${currentHp}, MaxHP=${maxHp}, Vivo=${isAlive}`);
+            
+            return `
+                <div class="team-member ${isAlive ? 'active' : 'dead'}">
+                    <h4>${hero.alias || hero.nombre}</h4>
+                    <div class="health-bar">
+                        <div class="health-fill" style="width: ${(currentHp / maxHp) * 100}%"></div>
+                    </div>
+                    <div class="health-text">${currentHp} / ${maxHp} HP</div>
+                    <div class="status">${isAlive ? 'Estado: Normal' : 'Estado: Muerto'}</div>
                 </div>
-                <div class="health-text">${hero.hp} / ${hero.maxHp} HP</div>
-                <div class="status">${hero.hp > 0 ? 'Estado: Normal' : 'Estado: Muerto'}</div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Renderizar equipo enemigo
-        this.elements.enemyTeam.innerHTML = team2.map(hero => `
-            <div class="team-member ${hero.hp > 0 ? '' : 'dead'}">
-                <h4>${hero.alias || hero.nombre}</h4>
-                <div class="health-bar">
-                    <div class="health-fill" style="width: ${hero.hp / hero.maxHp * 100}%"></div>
+        this.elements.enemyTeam.innerHTML = team2.map(hero => {
+            // Usar fallbacks para hp y maxHp como en 1v1
+            const currentHp = hero.hp || hero.health || 100; // Default a 100 si no hay datos de batalla
+            const maxHp = hero.maxHp || hero.maxHealth || 100;
+            const isAlive = currentHp > 0;
+            
+            console.log(`Personaje enemigo ${hero.alias || hero.nombre}: HP=${currentHp}, MaxHP=${maxHp}, Vivo=${isAlive}`);
+            
+            return `
+                <div class="team-member ${isAlive ? '' : 'dead'}">
+                    <h4>${hero.alias || hero.nombre}</h4>
+                    <div class="health-bar">
+                        <div class="health-fill" style="width: ${(currentHp / maxHp) * 100}%"></div>
+                    </div>
+                    <div class="health-text">${currentHp} / ${maxHp} HP</div>
+                    <div class="status">${isAlive ? 'Estado: Normal' : 'Estado: Muerto'}</div>
                 </div>
-                <div class="health-text">${hero.hp} / ${hero.maxHp} HP</div>
-                <div class="status">${hero.hp > 0 ? 'Estado: Normal' : 'Estado: Muerto'}</div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Determinar turno
         const isPlayerTurn = battleState.turnoActual === 'jugador' || battleState.currentTurn === 'player';
         this.elements.turnIndicator.textContent = isPlayerTurn ? 'Tu turno' : 'Turno del enemigo';
         this.elements.attackBtn.disabled = !isPlayerTurn;
+
+        // Habilitar selección manual
+        this.enableManualSelection();
+    }
+
+    // Habilitar selección manual de atacante y objetivo
+    enableManualSelection() {
+        this.isManualSelectionEnabled = true;
+        this.selectedAttacker = null;
+        this.selectedTarget = null;
+        this.updateManualSelectionDisplay();
+        this.addManualSelectionListeners();
+    }
+
+    // Deshabilitar selección manual
+    disableManualSelection() {
+        this.isManualSelectionEnabled = false;
+        this.selectedAttacker = null;
+        this.selectedTarget = null;
+        this.updateManualSelectionDisplay();
+        this.removeManualSelectionListeners();
+    }
+
+    // Actualizar display de selección manual
+    updateManualSelectionDisplay() {
+        if (this.manualSelectionElements.selectedAttacker) {
+            this.manualSelectionElements.selectedAttacker.textContent = 
+                this.selectedAttacker ? this.selectedAttacker.alias || this.selectedAttacker.nombre : 'No seleccionado';
+        }
+        if (this.manualSelectionElements.selectedTarget) {
+            this.manualSelectionElements.selectedTarget.textContent = 
+                this.selectedTarget ? this.selectedTarget.alias || this.selectedTarget.nombre : 'No seleccionado';
+        }
+    }
+
+    // Agregar event listeners para selección manual
+    addManualSelectionListeners() {
+        // Limpiar listeners anteriores
+        this.removeManualSelectionListeners();
+
+        if (this.battleMode === '1v1') {
+            // Para 1v1, agregar listeners a los personajes únicos
+            const playerMember = this.elements.playerTeam.querySelector('.team-member');
+            const enemyMember = this.elements.enemyTeam.querySelector('.team-member');
+            
+            if (playerMember) {
+                playerMember.classList.add('selectable');
+                playerMember.addEventListener('click', () => this.selectAttacker(0));
+            }
+            
+            if (enemyMember) {
+                enemyMember.classList.add('selectable');
+                enemyMember.addEventListener('click', () => this.selectTarget(0));
+            }
+        } else {
+            // Para 3v3, agregar listeners a todos los miembros del equipo
+            const playerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
+            playerMembers.forEach((member, index) => {
+                member.classList.add('selectable');
+                member.addEventListener('click', () => this.selectAttacker(index));
+            });
+
+            const enemyMembers = this.elements.enemyTeam.querySelectorAll('.team-member');
+            enemyMembers.forEach((member, index) => {
+                member.classList.add('selectable');
+                member.addEventListener('click', () => this.selectTarget(index));
+            });
+        }
+    }
+
+    // Remover event listeners de selección manual
+    removeManualSelectionListeners() {
+        const allMembers = document.querySelectorAll('.team-member');
+        allMembers.forEach(member => {
+            member.classList.remove('selectable', 'selected-attacker', 'selected-target');
+            // Clonar y reemplazar para remover todos los event listeners
+            const newMember = member.cloneNode(true);
+            member.parentNode.replaceChild(newMember, member);
+        });
+    }
+
+    // Seleccionar atacante
+    selectAttacker(index) {
+        if (!this.isManualSelectionEnabled) return;
+
+        let attackerId, attacker;
+
+        if (this.battleMode === '1v1') {
+            // Para 1v1, usar el personaje del jugador
+            const hero1 = this.currentBattleState.hero1 || this.currentBattleState.char1;
+            attackerId = hero1.id;
+            attacker = hero1;
+        } else {
+            // Para 3v3, usar el índice del array de miembros
+            const team1Ids = this.currentBattleState.equipo1?.miembros || [];
+            attackerId = team1Ids[index];
+            attacker = this.getCharacterById(attackerId);
+        }
+
+        if (!attacker) {
+            console.error(`❌ No se pudo encontrar el atacante con ID ${attackerId}`);
+            return;
+        }
+
+        // Verificar que el personaje esté vivo
+        const currentHp = attacker.hp || attacker.health || 100;
+        if (currentHp <= 0) {
+            this.addLogEntry('❌ No puedes seleccionar un personaje muerto como atacante', 'error');
+            return;
+        }
+
+        this.selectedAttacker = attacker;
+        this.updateManualSelectionDisplay();
+        this.updateSelectionVisuals();
+        
+        console.log(`🎯 Atacante seleccionado: ${attacker.alias || attacker.nombre}`);
+        this.addLogEntry(`🎯 Atacante seleccionado: ${attacker.alias || attacker.nombre}`, 'info');
+    }
+
+    // Seleccionar objetivo
+    selectTarget(index) {
+        if (!this.isManualSelectionEnabled) return;
+
+        let targetId, target;
+
+        if (this.battleMode === '1v1') {
+            // Para 1v1, usar el personaje enemigo
+            const hero2 = this.currentBattleState.hero2 || this.currentBattleState.char2;
+            targetId = hero2.id;
+            target = hero2;
+        } else {
+            // Para 3v3, usar el índice del array de miembros
+            const team2Ids = this.currentBattleState.equipo2?.miembros || [];
+            targetId = team2Ids[index];
+            target = this.getCharacterById(targetId);
+        }
+
+        if (!target) {
+            console.error(`❌ No se pudo encontrar el objetivo con ID ${targetId}`);
+            return;
+        }
+
+        // Verificar que el personaje esté vivo
+        const currentHp = target.hp || target.health || 100;
+        if (currentHp <= 0) {
+            this.addLogEntry('❌ No puedes seleccionar un personaje muerto como objetivo', 'error');
+            return;
+        }
+
+        this.selectedTarget = target;
+        this.updateManualSelectionDisplay();
+        this.updateSelectionVisuals();
+        
+        console.log(`🎯 Objetivo seleccionado: ${target.alias || target.nombre}`);
+        this.addLogEntry(`🎯 Objetivo seleccionado: ${target.alias || target.nombre}`, 'info');
+    }
+
+    // Actualizar visuales de selección
+    updateSelectionVisuals() {
+        // Limpiar selecciones anteriores
+        document.querySelectorAll('.team-member').forEach(member => {
+            member.classList.remove('selected-attacker', 'selected-target');
+        });
+
+        if (this.battleMode === '1v1') {
+            // Para 1v1, marcar directamente los personajes únicos
+            if (this.selectedAttacker) {
+                const playerMember = this.elements.playerTeam.querySelector('.team-member');
+                if (playerMember) {
+                    playerMember.classList.add('selected-attacker');
+                }
+            }
+            
+            if (this.selectedTarget) {
+                const enemyMember = this.elements.enemyTeam.querySelector('.team-member');
+                if (enemyMember) {
+                    enemyMember.classList.add('selected-target');
+                }
+            }
+        } else {
+            // Para 3v3, usar el sistema de índices
+            // Marcar atacante seleccionado
+            if (this.selectedAttacker) {
+                const team1Ids = this.currentBattleState.equipo1?.miembros || [];
+                const attackerIndex = team1Ids.indexOf(this.selectedAttacker.id);
+                if (attackerIndex !== -1) {
+                    const playerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
+                    if (playerMembers[attackerIndex]) {
+                        playerMembers[attackerIndex].classList.add('selected-attacker');
+                    }
+                }
+            }
+
+            // Marcar objetivo seleccionado
+            if (this.selectedTarget) {
+                const team2Ids = this.currentBattleState.equipo2?.miembros || [];
+                const targetIndex = team2Ids.indexOf(this.selectedTarget.id);
+                if (targetIndex !== -1) {
+                    const enemyMembers = this.elements.enemyTeam.querySelectorAll('.team-member');
+                    if (enemyMembers[targetIndex]) {
+                        enemyMembers[targetIndex].classList.add('selected-target');
+                    }
+                }
+            }
+        }
     }
 
     // Seleccionar movimiento
@@ -848,6 +1263,13 @@ class SuperheroesBattle {
 
     // Realizar ataque
     async performAttack() {
+        // Verificar que los personajes estén disponibles
+        if (!this.availableCharacters || !Array.isArray(this.availableCharacters)) {
+            console.error('❌ No se puede realizar ataque: availableCharacters no está disponible');
+            this.addLogEntry('❌ Error: Personajes no disponibles para el ataque', 'error');
+            return;
+        }
+        
         const selectedMove = document.querySelector('.move-btn.selected');
         if (!selectedMove) {
             this.addLogEntry('❌ Debes seleccionar un movimiento', 'error');
@@ -856,24 +1278,80 @@ class SuperheroesBattle {
 
         const moveType = selectedMove.dataset.move;
         
+        // Verificar selección manual de atacante y objetivo
+        if (!this.selectedAttacker) {
+            this.addLogEntry('❌ Debes seleccionar un atacante', 'error');
+            return;
+        }
+        
+        if (!this.selectedTarget) {
+            this.addLogEntry('❌ Debes seleccionar un objetivo', 'error');
+            return;
+        }
+        
         try {
             this.elements.attackBtn.disabled = true;
             this.elements.attackBtn.textContent = '🔄 Atacando...';
 
             console.log('Realizando ataque con movimiento:', moveType);
+            console.log('Atacante seleccionado:', this.selectedAttacker.alias || this.selectedAttacker.nombre);
+            console.log('Objetivo seleccionado:', this.selectedTarget.alias || this.selectedTarget.nombre);
+            console.log('Estado de batalla actual:', this.currentBattleState);
+            console.log('Battle ID actual:', this.currentBattleId);
+            console.log('Modo de batalla:', this.battleMode);
+            
+            // Usar los personajes seleccionados manualmente
+            let attackerId, targetId;
+            
+            if (this.battleMode === '1v1') {
+                // Para 1v1, usar los personajes seleccionados
+                attackerId = this.selectedAttacker.id;
+                targetId = this.selectedTarget.id;
+            } else {
+                // Para 3v3, usar los personajes seleccionados manualmente
+                attackerId = this.selectedAttacker.id;
+                targetId = this.selectedTarget.id;
+                
+                console.log('🎯 Usando selección manual:');
+                console.log('  - Atacante ID:', attackerId, 'Nombre:', this.selectedAttacker.alias || this.selectedAttacker.nombre);
+                console.log('  - Objetivo ID:', targetId, 'Nombre:', this.selectedTarget.alias || this.selectedTarget.nombre);
+            }
             
             // Preparar payload para el endpoint de acción
             const actionPayload = {
                 battleId: this.currentBattleId,
-                attackerId: this.currentBattleState.hero1?.id || this.currentBattleState.team1?.[0]?.id,
+                attackerId: attackerId,
                 attackType: moveType,
-                targetId: this.currentBattleState.hero2?.id || this.currentBattleState.team2?.[0]?.id
+                targetId: targetId
             };
             
-            console.log('Payload de acción:', actionPayload);
+            // Verificar que todos los campos requeridos estén presentes
+            console.log('🔍 Verificando payload de acción:');
+            console.log('  - battleId:', this.currentBattleId, '(tipo:', typeof this.currentBattleId, ')');
+            console.log('  - attackerId:', attackerId, '(tipo:', typeof attackerId, ')');
+            console.log('  - attackType:', moveType, '(tipo:', typeof moveType, ')');
+            console.log('  - targetId:', targetId, '(tipo:', typeof targetId, ')');
+            
+            // Validar que ningún campo sea undefined o null
+            if (!this.currentBattleId) {
+                throw new Error('battleId es undefined o null');
+            }
+            if (!attackerId) {
+                throw new Error('attackerId es undefined o null');
+            }
+            if (!moveType) {
+                throw new Error('attackType es undefined o null');
+            }
+            if (!targetId) {
+                throw new Error('targetId es undefined o null');
+            }
+            
+            console.log('✅ Payload de acción válido:', actionPayload);
             const attackData = await this.apiCall('/battles/action', 'POST', actionPayload);
 
-            console.log('Resultado del ataque:', attackData);
+            console.log('🎯 Resultado del ataque:', attackData);
+            console.log('📊 Estado del combate:', attackData.estadoCombate);
+            console.log('🏆 Ganador:', attackData.ganador);
             
             // Guardar información del round
             this.saveRoundData(attackData);
@@ -884,8 +1362,8 @@ class SuperheroesBattle {
             await this.loadBattleState();
 
             // Verificar si la batalla terminó
-            if (attackData.isFinished) {
-                this.addLogEntry(`🏆 Batalla terminada!`, 'info');
+            if (attackData.estadoCombate === 'Finalizado' || attackData.ganador) {
+                this.addLogEntry(`🏆 Batalla terminada! Ganador: ${attackData.ganador || 'No determinado'}`, 'info');
                 setTimeout(() => {
                     this.showBattleRecap(attackData);
                 }, 2000);
@@ -1150,9 +1628,27 @@ class SuperheroesBattle {
                     console.log(`✅ Mostrando pantalla: ${screen}`);
                 } else {
                     element.style.display = 'none';
+                    console.log(`🚫 Ocultando pantalla: ${screen}`);
                 }
+            } else {
+                console.warn(`⚠️ Elemento de pantalla no encontrado: ${screen}Screen`);
             }
         });
+        
+        // Verificación adicional para pantallas de selección
+        if (screenName === 'selection1v1') {
+            console.log('🔍 Verificando que pantalla 3v3 esté oculta...');
+            if (this.elements.selectionScreen3v3) {
+                this.elements.selectionScreen3v3.style.display = 'none';
+                console.log('✅ Pantalla 3v3 oculta confirmada');
+            }
+        } else if (screenName === 'selection3v3') {
+            console.log('🔍 Verificando que pantalla 1v1 esté oculta...');
+            if (this.elements.selectionScreen1v1) {
+                this.elements.selectionScreen1v1.style.display = 'none';
+                console.log('✅ Pantalla 1v1 oculta confirmada');
+            }
+        }
         
         // Limpiar mensajes al cambiar de pantalla
         this.hideMessage();
@@ -1210,6 +1706,24 @@ class SuperheroesBattle {
             currentBattle: this.currentBattleState,
             isPlayerTurn: this.isPlayerTurn
         };
+    }
+
+    // Verificar estado de visibilidad de pantallas (para debugging)
+    checkScreenVisibility() {
+        const screens = ['auth', 'start', 'selection1v1', 'selection3v3', 'battle', 'recap'];
+        const visibility = {};
+        
+        screens.forEach(screen => {
+            const element = this.elements[`${screen}Screen`] || document.getElementById(`${screen}Screen`);
+            if (element) {
+                visibility[screen] = element.style.display !== 'none';
+            } else {
+                visibility[screen] = 'element not found';
+            }
+        });
+        
+        console.log('📊 Estado de visibilidad de pantallas:', visibility);
+        return visibility;
     }
 }
 

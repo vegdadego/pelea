@@ -345,13 +345,21 @@ class BattleService {
         const battle = await Battle.findById(battleId);
         if (!battle || battle.isFinished) throw new Error('Batalla no encontrada o ya finalizada');
         if (battle.turnoActual !== 'jugador') throw new Error('No es el turno del jugador');
-        // Obtener personajes activos
-        const activeChar1 = battle.currentCharacterStates.find(c => c.id === battle.active1 && c.isAlive);
+        
+        // Obtener el personaje atacante seleccionado manualmente
+        const attackerChar = battle.currentCharacterStates.find(c => c.id === Number(attackerId) && c.isAlive);
+        if (!attackerChar) throw new Error('El atacante seleccionado no existe o está derrotado');
+        
+        // Verificar que el atacante pertenece al equipo del jugador (equipo1)
+        if (attackerChar.teamId !== battle.equipo1.id) throw new Error('Solo puedes atacar con personajes de tu equipo');
+        
         // Permitir seleccionar objetivo
         let targetCharId = targetId ? Number(targetId) : battle.active2;
         const targetChar = battle.currentCharacterStates.find(c => c.id === targetCharId && c.isAlive);
-        if (!activeChar1 || !targetChar) throw new Error('No hay personajes activos disponibles o el objetivo está derrotado');
-        if (attackerId !== activeChar1.id) throw new Error('Solo el personaje activo del jugador puede atacar');
+        if (!targetChar) throw new Error('El objetivo seleccionado no existe o está derrotado');
+        
+        // Verificar que el objetivo pertenece al equipo enemigo (equipo2)
+        if (targetChar.teamId !== battle.equipo2.id) throw new Error('Solo puedes atacar a personajes del equipo enemigo');
         // --- ATAQUE DEL JUGADOR ---
         let ataqueJugador, mitigacionJugador, hpRestanteEnemigo, mensajeJugador, nombreAtaque = 'Ataque Básico', descAtaque = '';
         // Selección de ataque según tipo
@@ -359,7 +367,7 @@ class BattleService {
         if (attackType === 'normal') ataqueIdx = 0;
         else if (attackType === 'especial') ataqueIdx = 1;
         else if (attackType === 'ultimate') ataqueIdx = 2;
-        const ataque = activeChar1.attacks && activeChar1.attacks[ataqueIdx] ? activeChar1.attacks[ataqueIdx] : { name: 'Ataque Básico', damage: 1, description: '' };
+        const ataque = attackerChar.attacks && attackerChar.attacks[ataqueIdx] ? attackerChar.attacks[ataqueIdx] : { name: 'Ataque Básico', damage: 1, description: '' };
         nombreAtaque = ataque.name || 'Ataque Básico';
         descAtaque = ataque.description || '';
         // Multiplicador de daño - VENTAJA PARA EL JUGADOR
@@ -368,23 +376,23 @@ class BattleService {
         multiplicador = multiplicador * 1.3;
         
         if (attackType === 'normal') {
-            let dañoBase = activeChar1.attack * multiplicador;
+            let dañoBase = attackerChar.attack * multiplicador;
             ataqueJugador = Math.max(1, Math.round(dañoBase - targetChar.defense));
             mitigacionJugador = targetChar.defense;
         } else if (attackType === 'especial') {
-            let dañoBase = (activeChar1.specialAttack || activeChar1.attack) * multiplicador;
+            let dañoBase = (attackerChar.specialAttack || attackerChar.attack) * multiplicador;
             ataqueJugador = Math.max(1, Math.round(dañoBase - (targetChar.specialDefense || targetChar.defense)));
             mitigacionJugador = targetChar.specialDefense || targetChar.defense;
         } else if (attackType === 'ultimate') {
-            if (activeChar1.ultimateUsed) throw new Error('La ultimate solo puede usarse una vez por combate');
-            let dañoBase = (activeChar1.specialAttack || activeChar1.attack) * 1.5 * multiplicador;
+            if (attackerChar.ultimateUsed) throw new Error('La ultimate solo puede usarse una vez por combate');
+            let dañoBase = (attackerChar.specialAttack || attackerChar.attack) * 1.5 * multiplicador;
             ataqueJugador = Math.max(1, Math.round(dañoBase - (targetChar.specialDefense || targetChar.defense)));
             mitigacionJugador = targetChar.specialDefense || targetChar.defense;
-            activeChar1.ultimateUsed = true;
+            attackerChar.ultimateUsed = true;
         }
         targetChar.currentHealth = Math.max(0, targetChar.currentHealth - ataqueJugador);
         hpRestanteEnemigo = targetChar.currentHealth;
-        mensajeJugador = `${activeChar1.nombre} usó ${nombreAtaque} (${attackType}). ${descAtaque ? descAtaque + ' ' : ''}Causó ${ataqueJugador} de daño (${mitigacionJugador} mitigado). ${targetChar.nombre} tiene ${hpRestanteEnemigo} HP restante.`;
+        mensajeJugador = `${attackerChar.nombre} usó ${nombreAtaque} (${attackType}). ${descAtaque ? descAtaque + ' ' : ''}Causó ${ataqueJugador} de daño (${mitigacionJugador} mitigado). ${targetChar.nombre} tiene ${hpRestanteEnemigo} HP restante.`;
         // Si el objetivo muere
         let objetivoDerrotado = false;
         if (targetChar.currentHealth <= 0) {
@@ -546,7 +554,13 @@ class BattleService {
             winner: battle.winner,
             loser: battle.loser,
             startTime: battle.startTime,
-            endTime: battle.endTime
+            endTime: battle.endTime,
+            // Agregar campos de personajes activos para 3v3
+            active1: battle.active1,
+            active2: battle.active2,
+            activeIndex1: battle.activeIndex1,
+            activeIndex2: battle.activeIndex2,
+            turnoActual: battle.turnoActual
         };
     }
 }
