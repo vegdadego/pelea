@@ -406,6 +406,27 @@
         .error-message.show {
             display: block;
         }
+
+        /* Audio Info Message */
+        .audio-info {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 10000;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 2px solid #FFD700;
+        }
+
+        .audio-info.show {
+            display: block;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -414,6 +435,15 @@
     <button class="audio-control" id="audioControl">
         <i class="fas fa-volume-up"></i>
     </button>
+
+    <!-- Audio Info Message -->
+    <div class="audio-info" id="audioInfo">
+        <h3>🎵 Música de Fondo</h3>
+        <p>Haz clic en cualquier lugar para activar la música de fondo</p>
+        <button onclick="hideAudioInfo()" style="margin-top: 10px; padding: 8px 16px; background: #FFD700; color: #000; border: none; border-radius: 5px; cursor: pointer;">
+            Entendido
+        </button>
+    </div>
 
     <div class="container">
         <!-- Header -->
@@ -510,14 +540,55 @@
         const backgroundMusic = new Audio('./music/00) Opening.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.3;
+        backgroundMusic.preload = 'auto';
+        
+        // Rutas alternativas para el audio
+        const audioPaths = [
+            './music/00) Opening.mp3',
+            '/game-interface/music/00) Opening.mp3',
+            './music/00) Opening.mp3'
+        ];
+        let currentAudioPathIndex = 0;
         
         // Debug audio loading
         backgroundMusic.addEventListener('loadstart', () => console.log('Audio loading started'));
         backgroundMusic.addEventListener('canplay', () => console.log('Audio can play'));
-        backgroundMusic.addEventListener('error', (e) => console.error('Audio error:', e));
+        backgroundMusic.addEventListener('error', (e) => {
+            console.error('Audio error:', e);
+            console.error('Audio error details:', backgroundMusic.error);
+            // Intentar con rutas alternativas
+            if (backgroundMusic.error && (backgroundMusic.error.code === 4 || backgroundMusic.error.code === 2)) {
+                currentAudioPathIndex++;
+                if (currentAudioPathIndex < audioPaths.length) {
+                    console.log(`Trying alternative audio path ${currentAudioPathIndex}: ${audioPaths[currentAudioPathIndex]}`);
+                    backgroundMusic.src = audioPaths[currentAudioPathIndex];
+                    backgroundMusic.load();
+                } else {
+                    console.error('All audio paths failed');
+                }
+            }
+        });
+        backgroundMusic.addEventListener('loadeddata', () => console.log('Audio data loaded'));
+        backgroundMusic.addEventListener('play', () => console.log('Audio playing'));
+        backgroundMusic.addEventListener('pause', () => console.log('Audio paused'));
         
         // Intentar cargar el audio inmediatamente
         backgroundMusic.load();
+        
+        // Función para reproducir música de fondo
+        function playBackgroundMusic() {
+            if (isAudioOn && backgroundMusic.readyState >= 2) {
+                backgroundMusic.play().catch(error => {
+                    console.log('Error playing background music:', error);
+                    // Intentar reproducir después de un clic del usuario
+                    document.addEventListener('click', () => {
+                        if (isAudioOn && backgroundMusic.paused) {
+                            backgroundMusic.play().catch(e => console.error('Error playing audio on click:', e));
+                        }
+                    }, { once: true });
+                });
+            }
+        }
 
         // Elementos del DOM
         const loginSection = document.getElementById('loginSection');
@@ -535,7 +606,18 @@
         audioControl.addEventListener('click', () => {
             isAudioOn = !isAudioOn;
             if (isAudioOn) {
-                backgroundMusic.play();
+                if (backgroundMusic.readyState >= 2) {
+                    backgroundMusic.play().catch(e => {
+                        console.error('Error playing audio:', e);
+                        // Si hay error, intentar recargar
+                        if (e.name === 'NotSupportedError') {
+                            backgroundMusic.load();
+                        }
+                    });
+                } else {
+                    console.log('Audio not ready, loading...');
+                    backgroundMusic.load();
+                }
                 audioControl.innerHTML = '<i class="fas fa-volume-up"></i>';
             } else {
                 backgroundMusic.pause();
@@ -543,12 +625,48 @@
             }
         });
 
-        // Iniciar música de fondo
-        document.addEventListener('click', () => {
+        // Iniciar música de fondo con interacción del usuario
+        function startBackgroundMusic() {
             if (isAudioOn) {
-                backgroundMusic.play();
+                if (backgroundMusic.readyState >= 2 && backgroundMusic.paused) {
+                    backgroundMusic.play().catch(e => {
+                        console.error('Error playing audio:', e);
+                        // Si hay error de formato, intentar recargar el audio
+                        if (e.name === 'NotSupportedError' || e.name === 'NotAllowedError') {
+                            console.log('Trying to reload audio...');
+                            backgroundMusic.load();
+                            setTimeout(() => {
+                                if (isAudioOn && backgroundMusic.readyState >= 2) {
+                                    backgroundMusic.play().catch(e2 => console.error('Second attempt failed:', e2));
+                                }
+                            }, 1000);
+                        }
+                        // Si todo falla, usar audio de respaldo
+                        if (e.name === 'NotSupportedError') {
+                            console.log('Using backup audio...');
+                            if (!backupAudio) {
+                                backupAudio = createBackupAudio();
+                            }
+                            if (backupAudio) {
+                                backupAudio.oscillator.start();
+                                setTimeout(() => backupAudio.oscillator.stop(), 2000);
+                            }
+                        }
+                    });
+                } else if (backgroundMusic.readyState === 0) {
+                    // Si el audio no está cargado, intentar cargarlo
+                    console.log('Audio not loaded, attempting to load...');
+                    backgroundMusic.load();
+                }
+                // Ocultar mensaje de audio si está visible
+                hideAudioInfo();
             }
-        }, { once: true });
+        }
+
+        // Intentar reproducir música en cualquier interacción del usuario
+        document.addEventListener('click', startBackgroundMusic, { once: true });
+        document.addEventListener('keydown', startBackgroundMusic, { once: true });
+        document.addEventListener('touchstart', startBackgroundMusic, { once: true });
 
         // Login
         loginForm.addEventListener('submit', async (e) => {
@@ -579,6 +697,13 @@
                     // Mostrar modos de juego
                     showGameModes();
                     showUserInfo(username);
+                    
+                    // Intentar reproducir música de fondo después del login exitoso
+                    if (isAudioOn && backgroundMusic.paused) {
+                        setTimeout(() => {
+                            backgroundMusic.play().catch(e => console.error('Error playing audio after login:', e));
+                        }, 100);
+                    }
                     
                     // Reproducir sonido de éxito
                     if (isAudioOn) {
@@ -815,6 +940,91 @@
             audio.volume = 0.3;
             audio.play();
         }
+
+        // Función para verificar el estado del audio
+        function checkAudioStatus() {
+            console.log('=== Audio Status ===');
+            console.log('Audio readyState:', backgroundMusic.readyState);
+            console.log('Audio paused:', backgroundMusic.paused);
+            console.log('Audio currentTime:', backgroundMusic.currentTime);
+            console.log('Audio duration:', backgroundMusic.duration);
+            console.log('Audio error:', backgroundMusic.error);
+            console.log('Audio on:', isAudioOn);
+            console.log('==================');
+        }
+
+        // Verificar estado del audio cada 10 segundos (solo en desarrollo)
+        setInterval(checkAudioStatus, 10000);
+
+        // Función para verificar y cargar el audio correctamente
+        function initializeAudio() {
+            // Verificar si el archivo existe
+            fetch('./music/00) Opening.mp3', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Audio file exists, loading...');
+                        backgroundMusic.load();
+                    } else {
+                        console.log('Audio file not found, trying alternative path...');
+                        backgroundMusic.src = '/game-interface/music/00) Opening.mp3';
+                        backgroundMusic.load();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking audio file:', error);
+                    // Intentar con ruta absoluta
+                    backgroundMusic.src = '/game-interface/music/00) Opening.mp3';
+                    backgroundMusic.load();
+                });
+        }
+
+        // Inicializar audio después de que la página cargue
+        window.addEventListener('load', () => {
+            setTimeout(initializeAudio, 1000);
+        });
+
+        // Función para crear audio de respaldo usando Web Audio API
+        function createBackupAudio() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Nota A4
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                
+                return { audioContext, oscillator, gainNode };
+            } catch (error) {
+                console.error('Error creating backup audio:', error);
+                return null;
+            }
+        }
+
+        // Variable para el audio de respaldo
+        let backupAudio = null;
+
+        // Funciones para el mensaje de audio
+        function showAudioInfo() {
+            const audioInfo = document.getElementById('audioInfo');
+            audioInfo.classList.add('show');
+        }
+
+        function hideAudioInfo() {
+            const audioInfo = document.getElementById('audioInfo');
+            audioInfo.classList.remove('show');
+        }
+
+        // Mostrar mensaje de audio después de 3 segundos si la música no está reproduciéndose
+        setTimeout(() => {
+            if (backgroundMusic.paused && isAudioOn) {
+                showAudioInfo();
+            }
+        }, 3000);
 
         // Efectos de hover para las tarjetas
         document.querySelectorAll('.mode-card').forEach(card => {
