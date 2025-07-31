@@ -15,13 +15,16 @@
 
         body {
             font-family: 'Orbitron', monospace;
-            background: linear-gradient(135deg, #87CEEB 0%, #4A90E2 50%, #2E5BBA 100%);
+            background: url('/game-interface/images/Whisk_gif_gfiztrjnzq.gif') center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
         }
 
-        /* Fondo con siluetas */
+        /* Overlay oscuro para mejorar legibilidad */
         body::before {
             content: '';
             position: fixed;
@@ -29,10 +32,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            background: rgba(0, 0, 0, 0.4);
             pointer-events: none;
             z-index: 1;
         }
@@ -148,12 +148,83 @@
             box-shadow: 0 10px 25px rgba(255, 69, 0, 0.4);
         }
 
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .register-link a {
+            color: #FFD700;
+            text-decoration: none;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .register-link a:hover {
+            color: #FFFFFF;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        /* Register Section */
+        .register-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        .register-section.show {
+            display: block;
+        }
+
+        .register-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .register-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .back-to-login {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-to-login a {
+            color: #FFD700;
+            text-decoration: none;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .back-to-login a:hover {
+            color: #FFFFFF;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
         /* Game Modes Section */
         .game-modes {
             display: none;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
             margin-top: 40px;
+            padding: 40px;
         }
 
         .game-modes.show {
@@ -299,6 +370,24 @@
             margin: 20px 0;
         }
 
+        /* Error/Success Message */
+        .error-message {
+            display: none;
+            text-align: center;
+            color: #FF6B6B;
+            font-size: 1rem;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
         .loading.show {
             display: block;
         }
@@ -354,6 +443,37 @@
                     <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                 </button>
             </form>
+            <div class="register-link">
+                <a href="#" onclick="showRegisterForm()">¿No tienes cuenta? Regístrate aquí</a>
+            </div>
+        </div>
+
+        <!-- Register Section -->
+        <div class="register-section" id="registerSection">
+            <form class="login-form" id="registerForm">
+                <div class="form-group">
+                    <label for="regUsername">Usuario:</label>
+                    <input type="text" id="regUsername" name="regUsername" required placeholder="Crea tu usuario">
+                </div>
+                                 <div class="form-group">
+                     <label for="regNombre">Nombre Completo:</label>
+                     <input type="text" id="regNombre" name="regNombre" required placeholder="Ingresa tu nombre completo">
+                 </div>
+                <div class="form-group">
+                    <label for="regPassword">Contraseña:</label>
+                    <input type="password" id="regPassword" name="regPassword" required placeholder="Crea tu contraseña">
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Confirmar Contraseña:</label>
+                    <input type="password" id="regConfirmPassword" name="regConfirmPassword" required placeholder="Confirma tu contraseña">
+                </div>
+                <button type="submit" class="register-btn">
+                    <i class="fas fa-user-plus"></i> Crear Cuenta
+                </button>
+            </form>
+            <div class="back-to-login">
+                <a href="#" onclick="showLoginForm()">¿Ya tienes cuenta? Inicia sesión aquí</a>
+            </div>
         </div>
 
         <!-- Loading -->
@@ -393,10 +513,12 @@
 
         // Elementos del DOM
         const loginSection = document.getElementById('loginSection');
+        const registerSection = document.getElementById('registerSection');
         const gameModes = document.getElementById('gameModes');
         const userInfo = document.getElementById('userInfo');
         const userName = document.getElementById('userName');
         const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
         const loading = document.getElementById('loading');
         const errorMessage = document.getElementById('errorMessage');
         const audioControl = document.getElementById('audioControl');
@@ -456,6 +578,63 @@
                     }
                 } else {
                     showError(data.message || 'Error en el login');
+                }
+            } catch (error) {
+                showError('Error de conexión. Verifica tu conexión a internet.');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Register
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+                         const username = document.getElementById('regUsername').value;
+             const nombre = document.getElementById('regNombre').value;
+             const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            // Validar contraseñas
+            if (password !== confirmPassword) {
+                showError('Las contraseñas no coinciden');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('La contraseña debe tener al menos 6 caracteres');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                                         body: JSON.stringify({ 
+                         user: username, 
+                         nombre: nombre,
+                         password: password 
+                     })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Mostrar mensaje de éxito
+                    showSuccess('Usuario creado exitosamente. Ahora puedes iniciar sesión.');
+                    
+                    // Limpiar formulario
+                    registerForm.reset();
+                    
+                    // Cambiar a formulario de login
+                    showLoginForm();
+                } else {
+                    showError(data.message || 'Error al crear el usuario');
                 }
             } catch (error) {
                 showError('Error de conexión. Verifica tu conexión a internet.');
@@ -562,6 +741,28 @@
 
         function hideError() {
             errorMessage.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.color = '#4CAF50';
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                hideError();
+                errorMessage.style.color = '#FF6B6B';
+            }, 3000);
+        }
+
+        function showRegisterForm() {
+            loginSection.classList.add('hidden');
+            registerSection.classList.add('show');
+            hideError();
+        }
+
+        function showLoginForm() {
+            registerSection.classList.remove('show');
+            loginSection.classList.remove('hidden');
+            hideError();
         }
 
         function logout() {

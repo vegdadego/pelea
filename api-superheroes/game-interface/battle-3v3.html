@@ -283,24 +283,27 @@
 
         .character-name {
             font-family: 'Press Start 2P', cursive;
-            font-size: 0.8rem;
+            font-size: 1rem;
             color: #FFD700;
             margin-bottom: 10px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-weight: bold;
         }
 
         .character-role {
-            font-size: 0.7rem;
+            font-size: 0.9rem;
             color: #FF6B6B;
             margin-bottom: 10px;
             text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
         }
 
         .character-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 5px;
-            font-size: 0.6rem;
+            font-size: 0.8rem;
             color: #FFFFFF;
         }
 
@@ -309,13 +312,17 @@
         }
 
         .stat-label {
-            color: #CCC;
-            font-size: 0.5rem;
+            color: #FFFFFF;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
         }
 
         .stat-value {
             font-weight: bold;
             color: #FFD700;
+            font-size: 0.9rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
         }
 
         .ready-btn {
@@ -434,17 +441,20 @@
             font-weight: bold;
             color: #FF6B6B;
             margin-bottom: 5px;
+            font-size: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
 
         .hp-bar {
             width: 100%;
             height: 12px;
-            background: rgba(0, 0, 0, 0.3);
+            background: linear-gradient(90deg, #666666, #888888);
             border-radius: 6px;
             overflow: hidden;
             margin-bottom: 5px;
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
 
         .hp-fill {
@@ -623,6 +633,8 @@
             font-weight: bold;
             color: #4ECDC4;
             margin-bottom: 5px;
+            font-size: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
 
         /* Controles de batalla */
@@ -641,7 +653,7 @@
             border: none;
             border-radius: 8px;
             font-family: 'Press Start 2P', cursive;
-            font-size: 0.7rem;
+            font-size: 0.9rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -686,17 +698,18 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             color: white;
             padding: 20px 40px;
             border-radius: 15px;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             text-align: center;
             z-index: 20;
             display: none;
             backdrop-filter: blur(10px);
             border: 2px solid #FFD93D;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
 
         .battle-message.show {
@@ -743,6 +756,116 @@
 
         .loading.show {
             display: block;
+        }
+
+        /* Pantalla de Recuento */
+        .battle-summary {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+        }
+
+        .battle-summary.show {
+            display: flex;
+        }
+
+        .summary-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .summary-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.5rem;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .summary-stats {
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-label {
+            color: #FFFFFF;
+            font-weight: bold;
+            font-size: 1rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        .stat-value {
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .summary-btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .summary-btn.new-battle {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .summary-btn.new-battle:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .summary-btn.back-main {
+            background: linear-gradient(45deg, #FF4500, #FF6347);
+            color: white;
+        }
+
+        .summary-btn.back-main:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 69, 0, 0.4);
         }
 
         /* Responsive */
@@ -881,7 +1004,7 @@
                                 <div class="hp-bar">
                                     <div class="hp-fill enemy" id="activeEnemyHp" style="width: 100%;"></div>
                                 </div>
-                                <div style="font-size: 0.6rem; color: #666;">
+                                <div style="font-size: 1.2rem; color: #FFFFFF; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3); background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3);">
                                     HP: <span id="activeEnemyCurrentHp">100</span> / <span id="activeEnemyMaxHp">100</span>
                                 </div>
                             </div>
@@ -894,7 +1017,7 @@
                                 <div class="hp-bar">
                                     <div class="hp-fill player" id="activePlayerHp" style="width: 100%;"></div>
                                 </div>
-                                <div style="font-size: 0.6rem; color: #666;">
+                                <div style="font-size: 1.2rem; color: #FFFFFF; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3); background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3);">
                                     HP: <span id="activePlayerCurrentHp">100</span> / <span id="activePlayerMaxHp">100</span>
                                 </div>
                             </div>
@@ -931,6 +1054,39 @@
         <!-- Efectos de ataque -->
         <div class="attack-effect" id="attackEffect"></div>
 
+        <!-- Pantalla de Recuento -->
+        <div class="battle-summary" id="battleSummary">
+            <div class="summary-content">
+                <h2 class="summary-title" id="summaryTitle">Resultado de la Batalla</h2>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Victoria:</span>
+                        <span class="stat-value" id="victoryStatus">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Personajes Sobrevivientes:</span>
+                        <span class="stat-value" id="survivorsCount">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Enemigos Derrotados:</span>
+                        <span class="stat-value" id="enemiesDefeated">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tiempo de Batalla:</span>
+                        <span class="stat-value" id="battleTime">-</span>
+                    </div>
+                </div>
+                <div class="summary-actions">
+                    <button class="summary-btn new-battle" onclick="startNewBattle()">
+                        <i class="fas fa-sword"></i> Nueva Batalla
+                    </button>
+                    <button class="summary-btn back-main" onclick="goBack()">
+                        <i class="fas fa-home"></i> Volver al Menú
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading -->
         <div class="loading" id="loading">
             <i class="fas fa-spinner fa-spin"></i> Cargando...
@@ -947,6 +1103,8 @@
         let isPlayerTurn = true;
         let isBattleActive = false;
         let allCharacters = [];
+        let battleStartTime = null;
+        let battleEndTime = null;
         const API_BASE_URL = 'https://pelea.onrender.com/api';
 
         // Elementos del DOM
@@ -1143,6 +1301,7 @@
             currentEnemyIndex = 0;
             isPlayerTurn = true;
             isBattleActive = true;
+            battleStartTime = Date.now();
 
             // Cambiar a fase de batalla
             selectionPhase.classList.add('hidden');
@@ -1178,7 +1337,7 @@
                         <div class="hp-bar">
                             <div class="hp-fill enemy" style="width: 100%;"></div>
                         </div>
-                        <div style="font-size: 0.6rem; color: #666;">
+                        <div style="font-size: 1.1rem; color: #FFFFFF; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
                             HP: ${character.hp} / ${character.hp}
                         </div>
                     </div>
@@ -1203,7 +1362,7 @@
                         <div class="hp-bar">
                             <div class="hp-fill player" style="width: 100%;"></div>
                         </div>
-                        <div style="font-size: 0.6rem; color: #666;">
+                        <div style="font-size: 1.1rem; color: #FFFFFF; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
                             HP: ${character.hp} / ${character.hp}
                         </div>
                     </div>
@@ -1390,6 +1549,7 @@
                 setTimeout(() => {
                     showMessage('¡Victoria! Has derrotado a todos los enemigos!');
                     isBattleActive = false;
+                    showBattleSummary(true);
                 }, 1000);
                 return;
             }
@@ -1405,6 +1565,7 @@
                 setTimeout(() => {
                     showMessage('¡Derrota! Todos tus guerreros han caído...');
                     isBattleActive = false;
+                    showBattleSummary(false);
                 }, 1000);
                 return;
             }
@@ -1469,6 +1630,54 @@
             window.location.href = '/main';
         }
 
+        function startNewBattle() {
+            // Ocultar pantalla de recuento
+            document.getElementById('battleSummary').classList.remove('show');
+            
+            // Reiniciar variables de batalla
+            currentPlayerIndex = 0;
+            currentEnemyIndex = 0;
+            isPlayerTurn = true;
+            isBattleActive = false;
+            battleStartTime = null;
+            battleEndTime = null;
+            
+            // Volver a la fase de selección
+            document.getElementById('selectionPhase').style.display = 'block';
+            document.getElementById('battlePhase').style.display = 'none';
+            
+            // Limpiar selecciones
+            selectedCharacters = [];
+            playerTeam = [];
+            enemyTeam = [];
+            
+            // Actualizar UI
+            updateCharacterSelection();
+        }
+
+        function showBattleSummary(isVictory) {
+            battleEndTime = Date.now();
+            const battleDuration = battleStartTime ? Math.floor((battleEndTime - battleStartTime) / 1000) : 0;
+            
+            // Calcular estadísticas
+            const survivors = playerTeam.filter(char => char.hp > 0).length;
+            const enemiesDefeated = enemyTeam.filter(char => char.hp <= 0).length;
+            
+            // Actualizar contenido de la pantalla de recuento
+            document.getElementById('summaryTitle').textContent = isVictory ? '¡VICTORIA!' : 'DERROTA';
+            document.getElementById('summaryTitle').style.color = isVictory ? '#4CAF50' : '#FF4500';
+            
+            document.getElementById('victoryStatus').textContent = isVictory ? 'SÍ' : 'NO';
+            document.getElementById('victoryStatus').style.color = isVictory ? '#4CAF50' : '#FF4500';
+            
+            document.getElementById('survivorsCount').textContent = survivors;
+            document.getElementById('enemiesDefeated').textContent = enemiesDefeated;
+            document.getElementById('battleTime').textContent = `${battleDuration} segundos`;
+            
+            // Mostrar pantalla de recuento
+            document.getElementById('battleSummary').classList.add('show');
+        }
+
         function updateHealthBar(barId, currentHp, maxHp) {
             const healthBar = document.getElementById(barId);
             const percentage = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
@@ -1486,12 +1695,18 @@
                 healthBar.classList.add('low');
             }
             
-            // Efecto de daño
+            // Efecto de daño visual
             if (percentage < 100) {
                 healthBar.style.animation = 'none';
                 setTimeout(() => {
                     healthBar.style.animation = '';
                 }, 10);
+                
+                // Agregar efecto de brillo en el borde de la barra
+                healthBar.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.3)';
+                setTimeout(() => {
+                    healthBar.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.3)';
+                }, 300);
             }
         }
     </script>

@@ -47,16 +47,18 @@ const router = express.Router();
  */
 router.post('/register', async (req, res) => {
     try {
-        const { user, password, nombre } = req.body;
-        if (!user || !password || !nombre) {
-            return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-        }
-        const existingUser = await User.findOne({ user });
-        if (existingUser) {
-            return res.status(400).json({ error: 'El nombre de usuario ya está registrado' });
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ user, password: hashedPassword, nombre });
+                 const { user, password, nombre } = req.body;
+         if (!user || !password || !nombre) {
+             return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+         }
+         
+         const existingUser = await User.findOne({ user });
+         if (existingUser) {
+             return res.status(400).json({ error: 'El nombre de usuario ya está registrado' });
+         }
+         
+         const hashedPassword = await bcrypt.hash(password, 10);
+         const newUser = new User({ user, password: hashedPassword, nombre });
         await newUser.save();
         res.status(201).json({ message: 'Usuario registrado correctamente' });
     } catch (error) {
