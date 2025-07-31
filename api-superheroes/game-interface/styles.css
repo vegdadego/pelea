@@ -1715,3 +1715,123 @@ body {
 .recap-content button:hover {
     background: #2980b9;
 } 
+
+/* Animaciones para efectos de muerte */
+@keyframes deathShake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes teamDefeat {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.95); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.6; }
+}
+
+/* Mejoras para personajes muertos */
+.team-member.dead {
+    border-color: var(--warning-color);
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    opacity: 0.6;
+    filter: grayscale(100%);
+    position: relative;
+    animation: deathShake 0.5s ease-in-out;
+}
+
+.team-member.dead::before {
+    content: "💀";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1.2rem;
+    z-index: 10;
+}
+
+.team-member.dead h4 {
+    color: #742a2a;
+    text-decoration: line-through;
+}
+
+.team-member.dead .health-fill {
+    background: #742a2a !important;
+}
+
+.team-member.dead .health-text {
+    color: #742a2a;
+    font-weight: bold;
+}
+
+.team-member.dead .status {
+    color: #742a2a;
+    font-weight: bold;
+}
+
+.team-member.dead:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--warning-color);
+    cursor: not-allowed;
+}
+
+/* Efectos adicionales para personajes muertos */
+/* Animation is already included in the main .team-member.dead style above */
+
+/* Efectos para equipos derrotados */
+.team-members.defeated {
+    animation: teamDefeat 1s ease-in-out;
+    opacity: 0.6;
+}
+
+/* Indicador de muerte en el nombre */
+.team-member.dead h4::after {
+    content: " (Muerto)";
+    color: #742a2a;
+    font-size: 0.8rem;
+    font-style: italic;
+} 
+
+/* Animación para notificación de muerte */
+@keyframes deathNotification {
+    0% { 
+        transform: translate(-50%, -50%) scale(0.5); 
+        opacity: 0; 
+    }
+    20% { 
+        transform: translate(-50%, -50%) scale(1.1); 
+        opacity: 1; 
+    }
+    80% { 
+        transform: translate(-50%, -50%) scale(1); 
+        opacity: 1; 
+    }
+    100% { 
+        transform: translate(-50%, -50%) scale(0.8); 
+        opacity: 0; 
+    }
+}
+
+/* Estilos para la notificación de muerte */
+.death-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.death-icon {
+    font-size: 2rem;
+    animation: pulse 1s infinite;
+}
+
+.death-text h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+}
+
+.death-text p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+} 
