@@ -535,6 +535,11 @@
         let isAudioOn = true;
         let currentUser = null;
         const API_BASE_URL = 'https://pelea.onrender.com/api';
+        
+        // Detectar si estamos en producción
+        const isProduction = window.location.hostname === 'pelea.onrender.com' || 
+                           window.location.hostname === 'localhost' ||
+                           window.location.protocol === 'https:';
 
         // Audio de fondo
         const backgroundMusic = new Audio('./music/00) Opening.mp3');
@@ -542,35 +547,45 @@
         backgroundMusic.volume = 0.3;
         backgroundMusic.preload = 'auto';
         
-        // Rutas alternativas para el audio
+        // Rutas alternativas para el audio (compatibles con Render)
         const audioPaths = [
             './music/00) Opening.mp3',
             '/game-interface/music/00) Opening.mp3',
-            './music/00) Opening.mp3'
+            '/api-superheroes/game-interface/music/00) Opening.mp3',
+            'https://pelea.onrender.com/game-interface/music/00) Opening.mp3'
         ];
         let currentAudioPathIndex = 0;
         
-        // Debug audio loading
-        backgroundMusic.addEventListener('loadstart', () => console.log('Audio loading started'));
-        backgroundMusic.addEventListener('canplay', () => console.log('Audio can play'));
+        // Debug audio loading (solo en desarrollo)
+        if (!isProduction) {
+            backgroundMusic.addEventListener('loadstart', () => console.log('Audio loading started'));
+            backgroundMusic.addEventListener('canplay', () => console.log('Audio can play'));
+            backgroundMusic.addEventListener('loadeddata', () => console.log('Audio data loaded'));
+            backgroundMusic.addEventListener('play', () => console.log('Audio playing'));
+            backgroundMusic.addEventListener('pause', () => console.log('Audio paused'));
+        }
+        
         backgroundMusic.addEventListener('error', (e) => {
-            console.error('Audio error:', e);
-            console.error('Audio error details:', backgroundMusic.error);
+            if (!isProduction) {
+                console.error('Audio error:', e);
+                console.error('Audio error details:', backgroundMusic.error);
+            }
             // Intentar con rutas alternativas
             if (backgroundMusic.error && (backgroundMusic.error.code === 4 || backgroundMusic.error.code === 2)) {
                 currentAudioPathIndex++;
                 if (currentAudioPathIndex < audioPaths.length) {
-                    console.log(`Trying alternative audio path ${currentAudioPathIndex}: ${audioPaths[currentAudioPathIndex]}`);
+                    if (!isProduction) {
+                        console.log(`Trying alternative audio path ${currentAudioPathIndex}: ${audioPaths[currentAudioPathIndex]}`);
+                    }
                     backgroundMusic.src = audioPaths[currentAudioPathIndex];
                     backgroundMusic.load();
                 } else {
-                    console.error('All audio paths failed');
+                    if (!isProduction) {
+                        console.error('All audio paths failed');
+                    }
                 }
             }
         });
-        backgroundMusic.addEventListener('loadeddata', () => console.log('Audio data loaded'));
-        backgroundMusic.addEventListener('play', () => console.log('Audio playing'));
-        backgroundMusic.addEventListener('pause', () => console.log('Audio paused'));
         
         // Intentar cargar el audio inmediatamente
         backgroundMusic.load();
@@ -941,20 +956,23 @@
             audio.play();
         }
 
-        // Función para verificar el estado del audio
+        // Función para verificar el estado del audio (solo en desarrollo)
         function checkAudioStatus() {
-            console.log('=== Audio Status ===');
-            console.log('Audio readyState:', backgroundMusic.readyState);
-            console.log('Audio paused:', backgroundMusic.paused);
-            console.log('Audio currentTime:', backgroundMusic.currentTime);
-            console.log('Audio duration:', backgroundMusic.duration);
-            console.log('Audio error:', backgroundMusic.error);
-            console.log('Audio on:', isAudioOn);
-            console.log('==================');
+            if (!isProduction) {
+                console.log('=== Audio Status ===');
+                console.log('Audio readyState:', backgroundMusic.readyState);
+                console.log('Audio paused:', backgroundMusic.paused);
+                console.log('Audio currentTime:', backgroundMusic.currentTime);
+                console.log('Audio duration:', backgroundMusic.duration);
+                console.log('Audio error:', backgroundMusic.error);
+                console.log('Audio on:', isAudioOn);
+                console.log('==================');
+            }
         }
 
-        // Verificar estado del audio cada 10 segundos (solo en desarrollo)
-        setInterval(checkAudioStatus, 10000);
+        // Verificar estado del audio cada 30 segundos (solo en desarrollo)
+        // Comentado en producción para mejor rendimiento
+        // setInterval(checkAudioStatus, 30000);
 
         // Función para verificar y cargar el audio correctamente
         function initializeAudio() {
@@ -962,20 +980,42 @@
             fetch('./music/00) Opening.mp3', { method: 'HEAD' })
                 .then(response => {
                     if (response.ok) {
-                        console.log('Audio file exists, loading...');
+                        if (!isProduction) {
+                            console.log('Audio file exists, loading...');
+                        }
                         backgroundMusic.load();
                     } else {
-                        console.log('Audio file not found, trying alternative path...');
-                        backgroundMusic.src = '/game-interface/music/00) Opening.mp3';
-                        backgroundMusic.load();
+                        if (!isProduction) {
+                            console.log('Audio file not found, trying alternative path...');
+                        }
+                        // Intentar con rutas alternativas
+                        tryAlternativeAudioPath();
                     }
                 })
                 .catch(error => {
-                    console.error('Error checking audio file:', error);
-                    // Intentar con ruta absoluta
-                    backgroundMusic.src = '/game-interface/music/00) Opening.mp3';
-                    backgroundMusic.load();
+                    if (!isProduction) {
+                        console.error('Error checking audio file:', error);
+                    }
+                    // Intentar con rutas alternativas
+                    tryAlternativeAudioPath();
                 });
+        }
+
+        // Función para probar rutas alternativas
+        function tryAlternativeAudioPath() {
+            if (currentAudioPathIndex < audioPaths.length - 1) {
+                currentAudioPathIndex++;
+                const nextPath = audioPaths[currentAudioPathIndex];
+                if (!isProduction) {
+                    console.log(`Trying audio path: ${nextPath}`);
+                }
+                backgroundMusic.src = nextPath;
+                backgroundMusic.load();
+            } else {
+                if (!isProduction) {
+                    console.log('All audio paths failed, using backup audio');
+                }
+            }
         }
 
         // Inicializar audio después de que la página cargue
@@ -1019,12 +1059,12 @@
             audioInfo.classList.remove('show');
         }
 
-        // Mostrar mensaje de audio después de 3 segundos si la música no está reproduciéndose
+        // Mostrar mensaje de audio después de 5 segundos si la música no está reproduciéndose
         setTimeout(() => {
             if (backgroundMusic.paused && isAudioOn) {
                 showAudioInfo();
             }
-        }, 3000);
+        }, 5000);
 
         // Efectos de hover para las tarjetas
         document.querySelectorAll('.mode-card').forEach(card => {
