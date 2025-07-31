@@ -583,7 +583,7 @@
                 <label class="filter-label">⚔️ Modo:</label>
                 <select class="filter-select" id="modeFilter">
                     <option value="">Todos</option>
-                    <option value="1v1">1 vs 1</option>
+    
                     <option value="3v3">3 vs 3</option>
                 </select>
             </div>
@@ -674,7 +674,7 @@
 
         // Generar historial de ejemplo
         function generateSampleHistory() {
-            const modes = ['1v1', '3v3'];
+            const modes = ['3v3'];
             const results = ['victory', 'defeat'];
             const characters = [
                 'Agumon', 'Angemon', 'Devimon', 'Gabumon', 
@@ -689,13 +689,8 @@
                 const mode = modes[Math.floor(Math.random() * modes.length)];
                 const result = results[Math.floor(Math.random() * results.length)];
                 
-                const playerCharacters = mode === '1v1' 
-                    ? [characters[Math.floor(Math.random() * characters.length)]]
-                    : characters.sort(() => 0.5 - Math.random()).slice(0, 3);
-                
-                const enemyCharacters = mode === '1v1'
-                    ? [characters[Math.floor(Math.random() * characters.length)]]
-                    : characters.sort(() => 0.5 - Math.random()).slice(0, 3);
+                const playerCharacters = characters.sort(() => 0.5 - Math.random()).slice(0, 3);
+                const enemyCharacters = characters.sort(() => 0.5 - Math.random()).slice(0, 3);
                 
                 history.push({
                     id: i + 1,
@@ -748,7 +743,7 @@
             
             const resultClass = battle.result === 'victory' ? 'result-victory' : 'result-defeat';
             const resultText = battle.result === 'victory' ? 'VICTORIA' : 'DERROTA';
-            const modeText = battle.mode === '1v1' ? '1 vs 1' : '3 vs 3';
+            const modeText = '3 vs 3';
             
             card.innerHTML = `
                 <div class="battle-header">

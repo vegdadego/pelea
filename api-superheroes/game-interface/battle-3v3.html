@@ -438,17 +438,65 @@
 
         .hp-bar {
             width: 100%;
-            height: 8px;
-            background: #ddd;
-            border-radius: 4px;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
             overflow: hidden;
             margin-bottom: 5px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .hp-fill {
             height: 100%;
-            background: linear-gradient(90deg, #FF6B6B, #FF8E8E);
-            transition: width 0.5s ease;
+            background: linear-gradient(90deg, #00FF00, #32CD32, #228B22);
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hp-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .hp-fill.enemy {
+            background: linear-gradient(90deg, #FF4500, #FF6347, #DC143C);
+        }
+
+        .hp-fill.player {
+            background: linear-gradient(90deg, #00FF00, #32CD32, #228B22);
+        }
+
+        .hp-fill.low {
+            background: linear-gradient(90deg, #FFD700, #FFA500, #FF4500);
+            animation: pulse 1s infinite;
+        }
+
+        .hp-fill.critical {
+            background: linear-gradient(90deg, #FF0000, #DC143C, #8B0000);
+            animation: critical-pulse 0.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes critical-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         /* Área central de batalla */
@@ -831,7 +879,7 @@
                             <div class="enemy-info">
                                 <div class="enemy-name" id="activeEnemyName">Enemigo</div>
                                 <div class="hp-bar">
-                                    <div class="hp-fill" id="activeEnemyHp" style="width: 100%;"></div>
+                                    <div class="hp-fill enemy" id="activeEnemyHp" style="width: 100%;"></div>
                                 </div>
                                 <div style="font-size: 0.6rem; color: #666;">
                                     HP: <span id="activeEnemyCurrentHp">100</span> / <span id="activeEnemyMaxHp">100</span>
@@ -844,7 +892,7 @@
                             <div class="player-info">
                                 <div class="player-name" id="activePlayerName">Jugador</div>
                                 <div class="hp-bar">
-                                    <div class="hp-fill" id="activePlayerHp" style="width: 100%;"></div>
+                                    <div class="hp-fill player" id="activePlayerHp" style="width: 100%;"></div>
                                 </div>
                                 <div style="font-size: 0.6rem; color: #666;">
                                     HP: <span id="activePlayerCurrentHp">100</span> / <span id="activePlayerMaxHp">100</span>
@@ -1128,7 +1176,7 @@
                     <div class="enemy-info">
                         <div class="enemy-name">${character.alias}</div>
                         <div class="hp-bar">
-                            <div class="hp-fill" style="width: 100%;"></div>
+                            <div class="hp-fill enemy" style="width: 100%;"></div>
                         </div>
                         <div style="font-size: 0.6rem; color: #666;">
                             HP: ${character.hp} / ${character.hp}
@@ -1153,7 +1201,7 @@
                     <div class="player-info">
                         <div class="player-name">${character.alias}</div>
                         <div class="hp-bar">
-                            <div class="hp-fill" style="width: 100%;"></div>
+                            <div class="hp-fill player" style="width: 100%;"></div>
                         </div>
                         <div style="font-size: 0.6rem; color: #666;">
                             HP: ${character.hp} / ${character.hp}
@@ -1195,8 +1243,8 @@
             document.getElementById('activeEnemyMaxHp').textContent = activeEnemy.hp;
 
             // Actualizar barras de HP
-            document.getElementById('activePlayerHp').style.width = '100%';
-            document.getElementById('activeEnemyHp').style.width = '100%';
+            updateHealthBar('activePlayerHp', 100, 100);
+            updateHealthBar('activeEnemyHp', 100, 100);
 
             // Resaltar personajes activos
             document.querySelectorAll('.enemy-sprite').forEach((sprite, index) => {
@@ -1229,8 +1277,7 @@
             activeEnemy.hp = Math.max(0, activeEnemy.hp - damage);
             
             // Actualizar barra de HP del enemigo
-            const hpPercentage = (activeEnemy.hp / activeEnemy.hp) * 100;
-            document.getElementById('activeEnemyHp').style.width = hpPercentage + '%';
+            updateHealthBar('activeEnemyHp', activeEnemy.hp, activeEnemy.maxHp || activeEnemy.hp);
             document.getElementById('activeEnemyCurrentHp').textContent = activeEnemy.hp;
 
             // Mostrar mensaje de ataque
@@ -1307,8 +1354,7 @@
             activePlayer.hp = Math.max(0, activePlayer.hp - damage);
             
             // Actualizar barra de HP del jugador
-            const hpPercentage = (activePlayer.hp / activePlayer.hp) * 100;
-            document.getElementById('activePlayerHp').style.width = hpPercentage + '%';
+            updateHealthBar('activePlayerHp', activePlayer.hp, activePlayer.maxHp || activePlayer.hp);
             document.getElementById('activePlayerCurrentHp').textContent = activePlayer.hp;
 
             // Mostrar mensaje de ataque del enemigo
@@ -1421,6 +1467,32 @@
 
         function goBack() {
             window.location.href = '/main';
+        }
+
+        function updateHealthBar(barId, currentHp, maxHp) {
+            const healthBar = document.getElementById(barId);
+            const percentage = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+            
+            // Actualizar el ancho de la barra
+            healthBar.style.width = percentage + '%';
+            
+            // Remover clases anteriores
+            healthBar.classList.remove('low', 'critical');
+            
+            // Aplicar clases según el nivel de vida
+            if (percentage <= 25) {
+                healthBar.classList.add('critical');
+            } else if (percentage <= 50) {
+                healthBar.classList.add('low');
+            }
+            
+            // Efecto de daño
+            if (percentage < 100) {
+                healthBar.style.animation = 'none';
+                setTimeout(() => {
+                    healthBar.style.animation = '';
+                }, 10);
+            }
         }
     </script>
 </body>

@@ -366,12 +366,6 @@
 
         <!-- Game Modes -->
         <div class="game-modes" id="gameModes">
-            <div class="mode-card" onclick="startBattle('1v1')">
-                <i class="mode-icon fas fa-sword"></i>
-                <h3 class="mode-title">Pelea 1 vs 1</h3>
-                <p class="mode-description">Batalla épica entre dos superhéroes. ¡Demuestra tu estrategia en combates individuales!</p>
-            </div>
-
             <div class="mode-card" onclick="startBattle('3v3')">
                 <i class="mode-icon fas fa-users"></i>
                 <h3 class="mode-title">Pelea 3 vs 3</h3>
@@ -587,9 +581,7 @@
             }
             
             // Redirigir a la página de batalla
-            if (mode === '1v1') {
-                window.location.href = '/battle-1v1';
-            } else if (mode === '3v3') {
+            if (mode === '3v3') {
                 window.location.href = '/battle-3v3';
             }
         }
