@@ -38,8 +38,16 @@ mongoose.connect(process.env.MONGODB_URI)
     console.log("Conectado a MongoDB Atlas");
     const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
-      console.log(`Servidor corriendo en: http://localhost:${PORT}`);
-      console.log(`Documentación Swagger en: http://localhost:${PORT}/api-docs`);
+      console.log(`\n🚀 Servidor corriendo en: http://localhost:${PORT}`);
+      console.log(`📚 Documentación Swagger en: http://localhost:${PORT}/api-docs`);
+      console.log(`🎮 Página principal en: http://localhost:${PORT}/main`);
+      console.log(`🎮 Interfaz del juego en: http://localhost:${PORT}/game`);
+      console.log(`⚔️ Batalla 1 vs 1 en: http://localhost:${PORT}/battle-1v1`);
+      console.log(`⚔️ Batalla 3 vs 3 en: http://localhost:${PORT}/battle-3v3`);
+      console.log(`📘 Historial de batallas en: http://localhost:${PORT}/battle-history`);
+      console.log(`👑 Panel de administración en: http://localhost:${PORT}/admin`);
+      console.log(`\n💡 Para acceder directamente a la página principal, abre: http://localhost:${PORT}/main`);
+      console.log(`\n`);
     });
   })
   .catch((err) => {
@@ -95,7 +103,27 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'game-interface', 'admin-interface.html'));
 });
 
+// Ruta para la página principal
+app.get('/main', (req, res) => {
+    res.sendFile(path.join(__dirname, 'game-interface', 'main.html'));
+});
+
 // Ruta para la interfaz principal del juego
 app.get('/game', (req, res) => {
     res.sendFile(path.join(__dirname, 'game-interface', 'index.html'));
+});
+
+// Ruta para la batalla 1 vs 1
+app.get('/battle-1v1', (req, res) => {
+    res.sendFile(path.join(__dirname, 'game-interface', 'battle-1v1.html'));
+});
+
+// Ruta para la batalla 3 vs 3
+app.get('/battle-3v3', (req, res) => {
+    res.sendFile(path.join(__dirname, 'game-interface', 'battle-3v3.html'));
+});
+
+// Ruta para el historial de batallas
+app.get('/battle-history', (req, res) => {
+    res.sendFile(path.join(__dirname, 'game-interface', 'battle-history.html'));
 }); 

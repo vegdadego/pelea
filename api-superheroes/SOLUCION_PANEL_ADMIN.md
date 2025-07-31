@@ -59,10 +59,11 @@ app.get('/game', (req, res) => {
 2. Abre el navegador en: `http://localhost:3001/admin`
 3. Inicia sesión con las mismas credenciales
 
-### Opción 3: Verificación con Script
+### Opción 3: Verificación Manual
 ```bash
 cd api-superheroes
-node test_admin_panel.js
+# Verifica que el servidor esté corriendo en puerto 3001
+# Accede al panel de administración en: http://localhost:3001/admin-interface.html
 ```
 
 ## 🔧 Funcionalidades del Panel de Administración
@@ -122,19 +123,19 @@ node test_admin_panel.js
 - Crear nuevo usuario administrador
 - Requiere autenticación admin
 
-## 🔄 Scripts de Utilidad
+## 🔄 Acceso al Panel de Administración
 
-### test_admin_panel.js
-Verifica que el usuario admin existe y muestra instrucciones de uso.
+### Panel de Administración
+Accede al panel de administración en: `http://localhost:3001/admin-interface.html`
 
-### create_admin_user.js
-Crea o actualiza el usuario administrador.
+### Credenciales de Administrador
+- Usuario: `vegdadego`
+- Contraseña: `admin123`
 
-### increase_damage.js
-Aumenta el daño de todos los personajes.
-
-### clear_teams.js
-Vacía la colección de equipos.
+### Funcionalidades Disponibles
+- Gestión de personajes y equipos
+- Visualización de batallas y usuarios
+- Herramientas de administración del sistema
 
 ## 🐛 Solución de Problemas
 

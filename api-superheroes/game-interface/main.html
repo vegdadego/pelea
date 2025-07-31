@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superhéroes Battle - Juego de Peleas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #87CEEB 0%, #4A90E2 50%, #2E5BBA 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Fondo con siluetas */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 2.5rem;
+            color: #FFD700;
+            text-shadow: 
+                3px 3px 0 #FF4500,
+                6px 6px 0 #8B0000;
+            margin-bottom: 10px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 3px 3px 0 #FF4500, 6px 6px 0 #8B0000; }
+            to { text-shadow: 3px 3px 0 #FF4500, 6px 6px 0 #8B0000, 0 0 20px #FFD700; }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #FFFFFF;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Login Section */
+        .login-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: block;
+        }
+
+        .login-section.hidden {
+            display: none;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            color: #FFFFFF;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .form-group input {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            transform: scale(1.02);
+        }
+
+        .login-btn {
+            background: linear-gradient(45deg, #FF4500, #FF6347);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 69, 0, 0.4);
+        }
+
+        /* Game Modes Section */
+        .game-modes {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .game-modes.show {
+            display: grid;
+        }
+
+        .mode-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .mode-card:hover::before {
+            left: 100%;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-10px) rotateY(5deg);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .mode-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .mode-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.2rem;
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .mode-description {
+            color: #FFFFFF;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Audio Control */
+        .audio-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .audio-control:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .audio-control i {
+            font-size: 20px;
+            color: #FFFFFF;
+        }
+
+        /* User Info */
+        .user-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        .user-info.show {
+            display: block;
+        }
+
+        .user-info h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(45deg, #DC143C, #FF4500);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 1.8rem;
+            }
+            
+            .game-modes {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            color: #FFD700;
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            color: #FFD700;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Audio Control -->
+    <button class="audio-control" id="audioControl">
+        <i class="fas fa-volume-up"></i>
+    </button>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="logo">SUPERHÉROES BATTLE</h1>
+            <p class="subtitle">¡La batalla épica de superhéroes ha comenzado!</p>
+        </div>
+
+        <!-- User Info -->
+        <div class="user-info" id="userInfo">
+            <h3>Bienvenido, <span id="userName">Usuario</span>!</h3>
+            <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+        </div>
+
+        <!-- Login Section -->
+        <div class="login-section" id="loginSection">
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="username">Usuario:</label>
+                    <input type="text" id="username" name="username" required placeholder="Ingresa tu usuario">
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" name="password" required placeholder="Ingresa tu contraseña">
+                </div>
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <i class="fas fa-spinner fa-spin"></i> Cargando...
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- Game Modes -->
+        <div class="game-modes" id="gameModes">
+            <div class="mode-card" onclick="startBattle('1v1')">
+                <i class="mode-icon fas fa-sword"></i>
+                <h3 class="mode-title">Pelea 1 vs 1</h3>
+                <p class="mode-description">Batalla épica entre dos superhéroes. ¡Demuestra tu estrategia en combates individuales!</p>
+            </div>
+
+            <div class="mode-card" onclick="startBattle('3v3')">
+                <i class="mode-icon fas fa-users"></i>
+                <h3 class="mode-title">Pelea 3 vs 3</h3>
+                <p class="mode-description">Forma tu equipo de tres héroes y lucha en batallas épicas de equipo contra equipo.</p>
+            </div>
+
+            <div class="mode-card" onclick="showHistory()">
+                <i class="mode-icon fas fa-history"></i>
+                <h3 class="mode-title">Historial de Batallas</h3>
+                <p class="mode-description">Revisa todas tus batallas anteriores, estadísticas y logros obtenidos.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let isAudioOn = true;
+        let currentUser = null;
+        const API_BASE_URL = 'https://pelea.onrender.com/api';
+
+        // Audio de fondo
+        const backgroundMusic = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.3;
+
+        // Elementos del DOM
+        const loginSection = document.getElementById('loginSection');
+        const gameModes = document.getElementById('gameModes');
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+        const loginForm = document.getElementById('loginForm');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const audioControl = document.getElementById('audioControl');
+
+        // Control de audio
+        audioControl.addEventListener('click', () => {
+            isAudioOn = !isAudioOn;
+            if (isAudioOn) {
+                backgroundMusic.play();
+                audioControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+            } else {
+                backgroundMusic.pause();
+                audioControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            }
+        });
+
+        // Iniciar música de fondo
+        document.addEventListener('click', () => {
+            if (isAudioOn) {
+                backgroundMusic.play();
+            }
+        }, { once: true });
+
+        // Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            showLoading(true);
+            hideError();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user: username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Guardar token
+                    localStorage.setItem('authToken', data.token);
+                    currentUser = username;
+                    
+                    // Mostrar modos de juego
+                    showGameModes();
+                    showUserInfo(username);
+                    
+                    // Reproducir sonido de éxito
+                    if (isAudioOn) {
+                        playSuccessSound();
+                    }
+                } else {
+                    showError(data.message || 'Error en el login');
+                }
+            } catch (error) {
+                showError('Error de conexión. Verifica tu conexión a internet.');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Verificar si ya está logueado
+        window.addEventListener('load', async () => {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // Verificar si el token es válido
+                await verifyToken(token);
+            } else {
+                // Si no hay token, mostrar login
+                showLoginSection();
+            }
+        });
+
+        // Verificar token al regresar a la página (para mantener sesión)
+        window.addEventListener('pageshow', async (event) => {
+            // Solo verificar si no estamos en el proceso de carga inicial
+            if (event.persisted) {
+                const token = localStorage.getItem('authToken');
+                if (token && currentUser) {
+                    // Si ya tenemos usuario, solo verificar rápidamente
+                    showGameModes();
+                    showUserInfo(currentUser);
+                } else if (token) {
+                    // Si tenemos token pero no usuario, verificar token
+                    await verifyToken(token);
+                }
+            }
+        });
+
+        async function verifyToken(token) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.username;
+                    showGameModes();
+                    showUserInfo(currentUser);
+                    return true;
+                } else {
+                    console.log('Token inválido, removiendo del localStorage');
+                    localStorage.removeItem('authToken');
+                    showLoginSection();
+                    return false;
+                }
+            } catch (error) {
+                console.log('Error verificando token:', error);
+                localStorage.removeItem('authToken');
+                showLoginSection();
+                return false;
+            }
+        }
+
+        function showGameModes() {
+            loginSection.classList.add('hidden');
+            gameModes.classList.add('show');
+            userInfo.classList.add('show');
+        }
+
+        function showLoginSection() {
+            loginSection.classList.remove('hidden');
+            gameModes.classList.remove('show');
+            userInfo.classList.remove('show');
+        }
+
+        function checkSessionStatus() {
+            const token = localStorage.getItem('authToken');
+            if (token && currentUser) {
+                showGameModes();
+                showUserInfo(currentUser);
+                return true;
+            }
+            return false;
+        }
+
+        function showUserInfo(username) {
+            userName.textContent = username;
+        }
+
+        function showLoading(show) {
+            if (show) {
+                loading.classList.add('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            currentUser = null;
+            
+            showLoginSection();
+            
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            hideError();
+        }
+
+        function startBattle(mode) {
+            if (isAudioOn) {
+                playClickSound();
+            }
+            
+            // Redirigir a la página de batalla
+            if (mode === '1v1') {
+                window.location.href = '/battle-1v1';
+            } else if (mode === '3v3') {
+                window.location.href = '/battle-3v3';
+            }
+        }
+
+        function showHistory() {
+            if (isAudioOn) {
+                playClickSound();
+            }
+            
+            // Redirigir a la página de historial
+            window.location.href = '/battle-history';
+        }
+
+        function playClickSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            audio.volume = 0.5;
+            audio.play();
+        }
+
+        function playSuccessSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            audio.volume = 0.3;
+            audio.play();
+        }
+
+        // Efectos de hover para las tarjetas
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                if (isAudioOn) {
+                    playClickSound();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

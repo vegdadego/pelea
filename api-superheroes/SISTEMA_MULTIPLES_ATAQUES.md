@@ -196,19 +196,18 @@ POST /api/battles/action
 }
 ```
 
-## Script de Prueba Actualizado
+## Pruebas del Sistema
 
-El script `test_battle_system.js` ha sido actualizado para demostrar:
+El sistema de múltiples ataques puede ser probado usando:
 
-1. **Creación de batalla** con nuevo sistema
-2. **Visualización de acciones disponibles**
-3. **Ejecución de múltiples ataques por turno**
-4. **Cambio automático de turnos**
-5. **Estado actualizado con acciones restantes**
+1. **Postman**: Usando las colecciones incluidas
+2. **Interfaz Web**: A través de `index.html`
+3. **API Directa**: Haciendo requests a los endpoints
 
-### **Ejecutar Demo:**
+### **Probar con Postman:**
 ```bash
-node test_battle_system.js
+# Importa Postman_Complete_Collection.json en Postman
+# Ejecuta las pruebas de batalla para ver el sistema en acción
 ```
 
 ## Compatibilidad

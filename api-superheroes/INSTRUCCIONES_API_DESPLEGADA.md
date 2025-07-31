@@ -18,14 +18,13 @@ He actualizado toda la automatización de Postman para usar tu API desplegada en
 Antes de usar Postman, verifica que tu API esté funcionando:
 
 ```bash
-# Instalar dependencias si no las tienes
-npm install node-fetch
+# Verificar que la API esté disponible
+curl https://pelea.onrender.com/api/personajes
 
-# Probar conectividad
-node test_production_api.js
+# O usar Postman para probar los endpoints
 ```
 
-Este script verificará:
+La API verificará:
 - ✅ Conectividad básica con la API
 - ✅ Autenticación de admin
 - ✅ Endpoints de personajes
@@ -70,8 +69,8 @@ Las variables ya están configuradas, pero puedes verificarlas:
 # Instalar Newman
 npm install -g newman
 
-# Ejecutar automatización completa
-node run_postman_automation.js
+# Ejecutar automatización usando Postman
+# Importa Postman_Complete_Collection.json y ejecuta las pruebas
 ```
 
 ## 🎮 Flujos de Prueba Recomendados
@@ -79,10 +78,10 @@ node run_postman_automation.js
 ### **Flujo 1: Testing Básico**
 ```bash
 # 1. Probar conectividad
-node test_production_api.js
+curl https://pelea.onrender.com/api/personajes
 
-# 2. Ejecutar automatización
-node run_postman_automation.js
+# 2. Usar Postman para pruebas completas
+# Importa Postman_Complete_Collection.json
 ```
 
 ### **Flujo 2: Testing Manual en Postman**
@@ -97,7 +96,7 @@ node run_postman_automation.js
 ```bash
 # Ejecutar todo automáticamente
 npm install -g newman
-node run_postman_automation.js
+# Usar Postman_Complete_Collection.json para pruebas completas
 ```
 
 ## 📊 Endpoints Disponibles

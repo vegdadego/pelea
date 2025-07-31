@@ -20,17 +20,17 @@ El error **HTTP 404** en `/api/battles/3v3` se debía a que el endpoint correcto
 - ✅ Sistema de turnos y combate
 - ✅ Recapitulación completa
 
-## 🧪 **Archivos de Prueba Creados**
+## 🧪 **Pruebas del Sistema**
 
-### **test_endpoints.html**
-- Prueba todos los endpoints de la API
-- Identifica cuáles están disponibles
-- Muestra resultados visuales
+### **Verificación de Endpoints**
+- Usa Postman para probar todos los endpoints de la API
+- Importa `Postman_Complete_Collection.json` para pruebas completas
+- Verifica conectividad con la API
 
-### **test_simple.html**
-- Prueba funcionalidad básica del juego
-- Verifica elementos del DOM
-- Simula selección de personajes
+### **Pruebas del Juego**
+- Usa `index.html` para probar la funcionalidad básica del juego
+- Verifica elementos del DOM y selección de personajes
+- Prueba el sistema de autenticación
 
 ## 🎮 **Cómo Usar el Juego Ahora**
 
