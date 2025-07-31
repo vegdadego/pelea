@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .audio-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .audio-control:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .audio-control i {
+            font-size: 20px;
+            color: #FFFFFF;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .success { background: rgba(76, 175, 80, 0.3); }
+        .error { background: rgba(244, 67, 54, 0.3); }
+        .info { background: rgba(33, 150, 243, 0.3); }
+    </style>
+</head>
+<body>
+    <button class="audio-control" id="audioControl">
+        <i class="fas fa-volume-up"></i>
+    </button>
+    
+    <div class="container">
+        <h1>Audio Test</h1>
+        <p>Esta página prueba la funcionalidad de audio del juego.</p>
+        
+        <div id="status"></div>
+        
+        <button onclick="testAudio()">Probar Audio</button>
+        <button onclick="checkAudioState()">Verificar Estado</button>
+        <button onclick="forcePlay()">Forzar Reproducción</button>
+        
+        <h3>Instrucciones:</h3>
+        <ol>
+            <li>Haz clic en "Probar Audio" para verificar si el archivo se carga correctamente</li>
+            <li>Haz clic en "Verificar Estado" para ver el estado actual del audio</li>
+            <li>Haz clic en "Forzar Reproducción" para intentar reproducir el audio</li>
+            <li>Usa el botón de audio en la esquina superior derecha para alternar entre reproducir/pausar</li>
+        </ol>
+    </div>
+
+    <script>
+        let isAudioOn = true;
+        const backgroundMusic = new Audio('./music/00) Opening.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.3;
+        
+        const statusDiv = document.getElementById('status');
+        const audioControl = document.getElementById('audioControl');
+        
+        function logStatus(message, type = 'info') {
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            statusDiv.appendChild(statusElement);
+            console.log(message);
+        }
+        
+        // Debug audio loading
+        backgroundMusic.addEventListener('loadstart', () => logStatus('Audio loading started', 'info'));
+        backgroundMusic.addEventListener('canplay', () => logStatus('Audio can play', 'success'));
+        backgroundMusic.addEventListener('error', (e) => logStatus(`Audio error: ${e.message}`, 'error'));
+        backgroundMusic.addEventListener('play', () => logStatus('Audio started playing', 'success'));
+        backgroundMusic.addEventListener('pause', () => logStatus('Audio paused', 'info'));
+        
+        // Control de audio
+        audioControl.addEventListener('click', () => {
+            isAudioOn = !isAudioOn;
+            if (isAudioOn) {
+                backgroundMusic.play().catch(e => logStatus(`Error playing audio: ${e.message}`, 'error'));
+                audioControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+                logStatus('Audio turned ON', 'success');
+            } else {
+                backgroundMusic.pause();
+                audioControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                logStatus('Audio turned OFF', 'info');
+            }
+        });
+        
+        function testAudio() {
+            logStatus('Testing audio file...', 'info');
+            backgroundMusic.load();
+        }
+        
+        function checkAudioState() {
+            logStatus(`Audio readyState: ${backgroundMusic.readyState}`, 'info');
+            logStatus(`Audio paused: ${backgroundMusic.paused}`, 'info');
+            logStatus(`Audio currentTime: ${backgroundMusic.currentTime}`, 'info');
+            logStatus(`Audio duration: ${backgroundMusic.duration}`, 'info');
+            logStatus(`Audio error: ${backgroundMusic.error ? backgroundMusic.error.message : 'None'}`, 'info');
+        }
+        
+        function forcePlay() {
+            logStatus('Attempting to force play audio...', 'info');
+            backgroundMusic.play().then(() => {
+                logStatus('Audio play successful', 'success');
+            }).catch(e => {
+                logStatus(`Audio play failed: ${e.message}`, 'error');
+            });
+        }
+        
+        // Iniciar música de fondo al hacer clic en cualquier parte
+        document.addEventListener('click', () => {
+            if (isAudioOn) {
+                backgroundMusic.play().catch(e => logStatus(`Error playing audio on click: ${e.message}`, 'error'));
+            }
+        }, { once: true });
+        
+        // Cargar audio al cargar la página
+        window.addEventListener('load', () => {
+            logStatus('Page loaded, attempting to load audio...', 'info');
+            backgroundMusic.load();
+        });
+    </script>
+</body>
+</html> 

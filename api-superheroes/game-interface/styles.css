@@ -1739,6 +1739,8 @@ body {
     filter: grayscale(100%);
     position: relative;
     animation: deathShake 0.5s ease-in-out;
+    pointer-events: none;
+    cursor: not-allowed !important;
 }
 
 .team-member.dead::before {
@@ -1773,16 +1775,28 @@ body {
     transform: none;
     box-shadow: none;
     border-color: var(--warning-color);
-    cursor: not-allowed;
+    cursor: not-allowed !important;
+    pointer-events: none;
 }
 
-/* Efectos adicionales para personajes muertos */
-/* Animation is already included in the main .team-member.dead style above */
+/* Personajes muertos no pueden ser seleccionables */
+.team-member.dead.selectable {
+    pointer-events: none;
+    cursor: not-allowed !important;
+}
+
+.team-member.dead.selectable:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--warning-color);
+    pointer-events: none;
+}
 
 /* Efectos para equipos derrotados */
 .team-members.defeated {
     animation: teamDefeat 1s ease-in-out;
     opacity: 0.6;
+    pointer-events: none;
 }
 
 /* Indicador de muerte en el nombre */
@@ -1834,4 +1848,30 @@ body {
     margin: 0;
     font-size: 0.9rem;
     opacity: 0.9;
+}
+
+/* Audio Control */
+.audio-control {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.audio-control:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.audio-control i {
+    font-size: 20px;
+    color: #FFFFFF;
 } 

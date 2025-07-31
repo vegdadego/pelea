@@ -942,6 +942,59 @@
         .status-poisoned {
             background: #9932CC;
         }
+        
+        /* Estilos para personajes muertos */
+        .enemy-sprite.dead,
+        .player-sprite.dead {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+        
+        .enemy-sprite.dead img,
+        .player-sprite.dead img {
+            filter: grayscale(100%);
+        }
+        
+        .enemy-character .hp-bar .hp-fill.dead,
+        .player-character .hp-bar .hp-fill.dead {
+            background: linear-gradient(90deg, #666666, #888888) !important;
+            filter: grayscale(100%);
+        }
+        
+        .active-sprite.dead {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+
+        /* Audio Control */
+        .audio-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .audio-control:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .audio-control i {
+            font-size: 20px;
+            color: #FFFFFF;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -949,6 +1002,11 @@
     <!-- Botón de regreso -->
     <button class="back-btn" onclick="goBack()">
         <i class="fas fa-arrow-left"></i>
+    </button>
+
+    <!-- Audio Control -->
+    <button class="audio-control" id="audioControl">
+        <i class="fas fa-volume-up"></i>
     </button>
 
     <div class="container">
@@ -1106,6 +1164,85 @@
         let battleStartTime = null;
         let battleEndTime = null;
         const API_BASE_URL = 'https://pelea.onrender.com/api';
+
+        // Audio de fondo
+        let isAudioOn = true;
+                        const backgroundMusic = new Audio('./music/00) Opening.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.3;
+
+        // Debug audio loading
+        backgroundMusic.addEventListener('loadstart', () => {
+            console.log('Audio loading started');
+            audioControl.style.border = '2px solid #FFA500';
+        });
+        backgroundMusic.addEventListener('canplay', () => {
+            console.log('Audio can play');
+            audioControl.style.border = '2px solid #4CAF50';
+        });
+        backgroundMusic.addEventListener('error', (e) => {
+            console.error('Audio error:', e);
+            audioControl.style.border = '2px solid #FF0000';
+        });
+        backgroundMusic.addEventListener('play', () => {
+            console.log('Audio started playing');
+            audioControl.style.background = 'rgba(76, 175, 80, 0.3)';
+        });
+        backgroundMusic.addEventListener('pause', () => {
+            console.log('Audio paused');
+            audioControl.style.background = 'rgba(255, 255, 255, 0.2)';
+        });
+
+        // Elementos del DOM para audio
+        const audioControl = document.getElementById('audioControl');
+
+        // Control de audio
+        audioControl.addEventListener('click', () => {
+            isAudioOn = !isAudioOn;
+            if (isAudioOn) {
+                backgroundMusic.play().catch(e => console.error('Error playing audio:', e));
+                audioControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+            } else {
+                backgroundMusic.pause();
+                audioControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            }
+        });
+
+        // Iniciar música de fondo con manejo de errores
+        document.addEventListener('click', () => {
+            if (isAudioOn) {
+                backgroundMusic.play().catch(e => console.error('Error playing audio on click:', e));
+            }
+        }, { once: true });
+        
+        // Intentar reproducir audio después de un breve delay
+        setTimeout(() => {
+            if (isAudioOn) {
+                backgroundMusic.play().catch(e => console.error('Error playing audio after delay:', e));
+            }
+        }, 1000);
+
+        // Intentar cargar el audio inmediatamente
+        backgroundMusic.load();
+        
+        // Función para intentar reproducir audio de múltiples formas
+        function tryPlayAudio() {
+            if (isAudioOn) {
+                backgroundMusic.play().catch(e => {
+                    console.error('Error playing audio:', e);
+                    // Intentar de nuevo después de un delay
+                    setTimeout(() => {
+                        if (isAudioOn) {
+                            backgroundMusic.play().catch(e2 => console.error('Second attempt failed:', e2));
+                        }
+                    }, 500);
+                });
+            }
+        }
+        
+        // Intentar reproducir en múltiples eventos
+        document.addEventListener('DOMContentLoaded', tryPlayAudio);
+        window.addEventListener('load', tryPlayAudio);
 
         // Elementos del DOM
         const selectionPhase = document.getElementById('selectionPhase');
@@ -1309,6 +1446,7 @@
 
             // Renderizar equipos
             renderTeams();
+            updateAllHealthBars();
             updateActiveCharacters();
             showMessage('¡La batalla ha comenzado!');
         }
@@ -1335,7 +1473,7 @@
                     <div class="enemy-info">
                         <div class="enemy-name">${character.alias}</div>
                         <div class="hp-bar">
-                            <div class="hp-fill enemy" style="width: 100%;"></div>
+                            <div class="hp-fill enemy" id="enemy${index}Hp" style="width: 100%;"></div>
                         </div>
                         <div style="font-size: 1.1rem; color: #FFFFFF; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
                             HP: ${character.hp} / ${character.hp}
@@ -1343,6 +1481,15 @@
                     </div>
                 `;
                 enemyTeamContainer.appendChild(enemyChar);
+                
+                // Aplicar efectos de muerte si el personaje está muerto
+                if (character.hp <= 0) {
+                    const sprite = enemyChar.querySelector('.enemy-sprite');
+                    if (sprite) {
+                        sprite.classList.add('dead');
+                    }
+                    updateHealthBar(`enemy${index}Hp`, 0, character.hp);
+                }
             });
 
             // Renderizar equipo del jugador
@@ -1360,7 +1507,7 @@
                     <div class="player-info">
                         <div class="player-name">${character.alias}</div>
                         <div class="hp-bar">
-                            <div class="hp-fill player" style="width: 100%;"></div>
+                            <div class="hp-fill player" id="player${index}Hp" style="width: 100%;"></div>
                         </div>
                         <div style="font-size: 1.1rem; color: #FFFFFF; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
                             HP: ${character.hp} / ${character.hp}
@@ -1368,6 +1515,27 @@
                     </div>
                 `;
                 playerTeamContainer.appendChild(playerChar);
+                
+                // Aplicar efectos de muerte si el personaje está muerto
+                if (character.hp <= 0) {
+                    const sprite = playerChar.querySelector('.player-sprite');
+                    if (sprite) {
+                        sprite.classList.add('dead');
+                    }
+                    updateHealthBar(`player${index}Hp`, 0, character.hp);
+                }
+            });
+        }
+
+        function updateAllHealthBars() {
+            // Actualizar barras de salud de todos los personajes enemigos
+            enemyTeam.forEach((character, index) => {
+                updateHealthBar(`enemy${index}Hp`, character.hp, character.hp);
+            });
+            
+            // Actualizar barras de salud de todos los personajes del jugador
+            playerTeam.forEach((character, index) => {
+                updateHealthBar(`player${index}Hp`, character.hp, character.hp);
             });
         }
 
@@ -1402,8 +1570,8 @@
             document.getElementById('activeEnemyMaxHp').textContent = activeEnemy.hp;
 
             // Actualizar barras de HP
-            updateHealthBar('activePlayerHp', 100, 100);
-            updateHealthBar('activeEnemyHp', 100, 100);
+            updateHealthBar('activePlayerHp', activePlayer.hp, activePlayer.hp);
+            updateHealthBar('activeEnemyHp', activeEnemy.hp, activeEnemy.hp);
 
             // Resaltar personajes activos
             document.querySelectorAll('.enemy-sprite').forEach((sprite, index) => {
@@ -1413,6 +1581,19 @@
             document.querySelectorAll('.player-sprite').forEach((sprite, index) => {
                 sprite.classList.toggle('active', index === currentPlayerIndex);
             });
+            
+            // Aplicar efectos de muerte a los sprites activos si están muertos
+            if (activePlayer.hp <= 0) {
+                activePlayerElement.classList.add('dead');
+            } else {
+                activePlayerElement.classList.remove('dead');
+            }
+            
+            if (activeEnemy.hp <= 0) {
+                activeEnemyElement.classList.add('dead');
+            } else {
+                activeEnemyElement.classList.remove('dead');
+            }
         }
 
         async function attack(attackType) {
@@ -1422,6 +1603,18 @@
 
             const activePlayer = playerTeam[currentPlayerIndex];
             const activeEnemy = enemyTeam[currentEnemyIndex];
+            
+            // Verificar si el personaje del jugador está muerto
+            if (activePlayer.hp <= 0) {
+                showMessage('¡No puedes atacar con un personaje muerto!');
+                return;
+            }
+            
+            // Verificar si el enemigo está muerto
+            if (activeEnemy.hp <= 0) {
+                showMessage('¡El enemigo ya está derrotado!');
+                return;
+            }
 
             // Deshabilitar botones durante el ataque
             disableBattleButtons(true);
@@ -1501,6 +1694,29 @@
 
             const activePlayer = playerTeam[currentPlayerIndex];
             const activeEnemy = enemyTeam[currentEnemyIndex];
+            
+            // Verificar si el enemigo está muerto
+            if (activeEnemy.hp <= 0) {
+                // Buscar el siguiente enemigo vivo
+                let nextEnemyIndex = (currentEnemyIndex + 1) % enemyTeam.length;
+                let attempts = 0;
+                
+                while (enemyTeam[nextEnemyIndex].hp <= 0 && attempts < enemyTeam.length) {
+                    nextEnemyIndex = (nextEnemyIndex + 1) % enemyTeam.length;
+                    attempts++;
+                }
+                
+                // Si no hay enemigos vivos, victoria del jugador
+                if (enemyTeam[nextEnemyIndex].hp <= 0) {
+                    showMessage('¡Victoria! Has derrotado a todos los enemigos!');
+                    isBattleActive = false;
+                    showBattleSummary(true);
+                    return;
+                }
+                
+                currentEnemyIndex = nextEnemyIndex;
+                updateActiveCharacters();
+            }
 
             // IA simple del enemigo
             const attackTypes = ['basic', 'special', 'ultimate'];
@@ -1577,7 +1793,25 @@
         function switchCharacter() {
             if (!isPlayerTurn) return;
 
-            currentPlayerIndex = (currentPlayerIndex + 1) % playerTeam.length;
+            // Buscar el siguiente personaje vivo
+            let nextIndex = (currentPlayerIndex + 1) % playerTeam.length;
+            let attempts = 0;
+            
+            // Buscar un personaje vivo (máximo 3 intentos para evitar bucle infinito)
+            while (playerTeam[nextIndex].hp <= 0 && attempts < playerTeam.length) {
+                nextIndex = (nextIndex + 1) % playerTeam.length;
+                attempts++;
+            }
+            
+            // Si no hay personajes vivos, mostrar mensaje de derrota
+            if (playerTeam[nextIndex].hp <= 0) {
+                showMessage('¡Todos tus personajes han caído!');
+                isBattleActive = false;
+                showBattleSummary(false);
+                return;
+            }
+            
+            currentPlayerIndex = nextIndex;
             updateActiveCharacters();
             showMessage(`Cambiaste a ${playerTeam[currentPlayerIndex].alias}`);
         }
@@ -1680,7 +1914,15 @@
 
         function updateHealthBar(barId, currentHp, maxHp) {
             const healthBar = document.getElementById(barId);
+            if (!healthBar) {
+                console.warn(`Health bar with ID '${barId}' not found`);
+                return;
+            }
+            
             const percentage = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+            
+            // Verificar si el personaje está muerto
+            const isDead = currentHp <= 0;
             
             // Actualizar el ancho de la barra
             healthBar.style.width = percentage + '%';
@@ -1689,14 +1931,19 @@
             healthBar.classList.remove('low', 'critical');
             
             // Aplicar clases según el nivel de vida
-            if (percentage <= 25) {
+            if (isDead) {
+                // Personaje muerto - aplicar efectos visuales
+                healthBar.style.background = 'linear-gradient(90deg, #666666, #888888)';
+                healthBar.style.filter = 'grayscale(100%)';
+                healthBar.style.opacity = '0.6';
+            } else if (percentage <= 25) {
                 healthBar.classList.add('critical');
             } else if (percentage <= 50) {
                 healthBar.classList.add('low');
             }
             
             // Efecto de daño visual
-            if (percentage < 100) {
+            if (percentage < 100 && !isDead) {
                 healthBar.style.animation = 'none';
                 setTimeout(() => {
                     healthBar.style.animation = '';
@@ -1708,7 +1955,72 @@
                     healthBar.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.3)';
                 }, 300);
             }
+            
+            // Si el personaje está muerto, aplicar efectos adicionales
+            if (isDead) {
+                // Buscar el contenedor del personaje para aplicar efectos visuales
+                const characterContainer = healthBar.closest('.enemy-character, .player-character');
+                if (characterContainer) {
+                    const sprite = characterContainer.querySelector('.enemy-sprite, .player-sprite');
+                    if (sprite) {
+                        sprite.classList.add('dead');
+                        sprite.style.filter = 'grayscale(100%)';
+                        sprite.style.opacity = '0.6';
+                        sprite.style.cursor = 'not-allowed';
+                        sprite.style.pointerEvents = 'none';
+                    }
+                    
+                    // Actualizar el texto de HP para mostrar 0
+                    const hpText = characterContainer.querySelector('div[style*="font-size: 1.1rem"]');
+                    if (hpText) {
+                        hpText.innerHTML = `HP: 0 / ${maxHp}`;
+                    }
+                }
+            }
         }
+    </script>
+    
+    <!-- Incluir el script principal del juego con las mejoras de personajes muertos -->
+    <script src="game.js"></script>
+    
+    <!-- Verificación de que las mejoras se apliquen -->
+    <script>
+        // Verificar que la clase SuperheroesBattle se haya cargado correctamente
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Verificando carga de game.js...');
+            
+            if (typeof SuperheroesBattle !== 'undefined') {
+                console.log('✅ SuperheroesBattle cargado correctamente');
+                console.log('✅ Mejoras de personajes muertos disponibles');
+                
+                // Inicializar el juego si no se ha hecho automáticamente
+                if (!window.gameInstance) {
+                    console.log('🎮 Inicializando instancia del juego...');
+                    window.gameInstance = new SuperheroesBattle();
+                }
+            } else {
+                console.error('❌ Error: SuperheroesBattle no se cargó correctamente');
+                console.error('❌ Verificar que game.js esté en el directorio correcto');
+            }
+        });
+        
+        // Verificar que las mejoras estén disponibles
+        window.addEventListener('load', function() {
+            console.log('🔍 Verificando mejoras de personajes muertos...');
+            
+            // Verificar funciones específicas de las mejoras
+            if (window.gameInstance && window.gameInstance.checkAndApplyDeathStates) {
+                console.log('✅ Función checkAndApplyDeathStates disponible');
+            } else {
+                console.warn('⚠️ Función checkAndApplyDeathStates no disponible');
+            }
+            
+            if (window.gameInstance && window.gameInstance.applyDeathEffectsToMember) {
+                console.log('✅ Función applyDeathEffectsToMember disponible');
+            } else {
+                console.warn('⚠️ Función applyDeathEffectsToMember no disponible');
+            }
+        });
     </script>
 </body>
 </html> 

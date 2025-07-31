@@ -27,6 +27,20 @@ class SuperheroesBattle {
         this.selectedTarget = null;
         this.isManualSelectionEnabled = false;
 
+        // Audio properties
+        this.isAudioOn = true;
+        this.backgroundMusic = new Audio('./music/Digimon Tamers OST - The Biggest Dreamer (Opening).mp3');
+        this.backgroundMusic.loop = true;
+        this.backgroundMusic.volume = 0.3;
+        
+        // Debug audio loading
+        this.backgroundMusic.addEventListener('loadstart', () => console.log('Audio loading started'));
+        this.backgroundMusic.addEventListener('canplay', () => console.log('Audio can play'));
+        this.backgroundMusic.addEventListener('error', (e) => console.error('Audio error:', e));
+        
+        // Intentar cargar el audio inmediatamente
+        this.backgroundMusic.load();
+
         // Elementos del DOM
         this.elements = {
             // Pantallas
@@ -161,6 +175,35 @@ class SuperheroesBattle {
 
         // Event listeners para selección manual de atacante y objetivo
         this.initializeManualSelectionListeners();
+
+        // Audio control event listener
+        const audioControl = document.getElementById('audioControl');
+        if (audioControl) {
+            audioControl.addEventListener('click', () => {
+                this.isAudioOn = !this.isAudioOn;
+                if (this.isAudioOn) {
+                    this.backgroundMusic.play().catch(e => console.error('Error playing audio:', e));
+                    audioControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+                } else {
+                    this.backgroundMusic.pause();
+                    audioControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                }
+            });
+        }
+
+        // Iniciar música de fondo al hacer clic en cualquier parte
+        document.addEventListener('click', () => {
+            if (this.isAudioOn) {
+                this.backgroundMusic.play().catch(e => console.error('Error playing audio on click:', e));
+            }
+        }, { once: true });
+        
+        // Intentar reproducir audio después de un breve delay
+        setTimeout(() => {
+            if (this.isAudioOn) {
+                this.backgroundMusic.play().catch(e => console.error('Error playing audio after delay:', e));
+            }
+        }, 1000);
     }
 
     // Inicializar event listeners para selección manual
@@ -174,8 +217,35 @@ class SuperheroesBattle {
         if (this.authToken && this.currentUser) {
             this.showScreen('start');
             this.updateUserInfo();
+            
+            // Verificar si hay una batalla en curso al recargar la página
+            this.checkOngoingBattle();
         } else {
             this.showScreen('auth');
+        }
+    }
+
+    // Verificar si hay una batalla en curso al recargar la página
+    async checkOngoingBattle() {
+        try {
+            // Intentar recuperar el ID de batalla del localStorage
+            const savedBattleId = localStorage.getItem('currentBattleId');
+            if (savedBattleId) {
+                console.log('🔄 Recuperando batalla en curso:', savedBattleId);
+                this.currentBattleId = savedBattleId;
+                
+                // Intentar cargar el estado de la batalla
+                await this.loadBattleState();
+                
+                // Mostrar pantalla de batalla
+                this.showScreen('battle');
+                
+                console.log('✅ Batalla en curso restaurada');
+            }
+        } catch (error) {
+            console.error('❌ Error al restaurar batalla en curso:', error);
+            // Limpiar datos de batalla si hay error
+            localStorage.removeItem('currentBattleId');
         }
     }
 
@@ -859,6 +929,9 @@ class SuperheroesBattle {
             console.log('Battle ID obtenido:', battleData.id || battleData.battleId);
             this.currentBattleId = battleData.id || battleData.battleId;
             
+            // Guardar ID de batalla en localStorage para persistencia
+            localStorage.setItem('currentBattleId', this.currentBattleId);
+            
             console.log('Mostrando pantalla de batalla...');
             this.showScreen('battle');
             this.showGameMessage(`⚔️ ¡Batalla ${mode} iniciada!`, 'info');
@@ -918,11 +991,126 @@ class SuperheroesBattle {
             console.log('🎨 Actualizando UI de batalla...');
             this.updateBattleUI(response.battleState);
             this.updateTurnInfo(); // Inicializar información del turno
+            
+            // Verificar y aplicar estado de muerte de personajes
+            this.checkAndApplyDeathStates();
+            
             console.log('✅ Estado de batalla cargado y UI actualizada');
         } catch (error) {
             console.error('Error en loadBattleState:', error);
             this.showGameMessage(`Error al cargar estado de batalla: ${error.message}`, 'error');
         }
+    }
+
+    // Verificar y aplicar estado de muerte de personajes
+    checkAndApplyDeathStates() {
+        if (!this.currentBattleState) {
+            console.log('⚠️ No hay estado de batalla disponible para verificar muerte');
+            return;
+        }
+
+        const charStates = this.currentBattleState.characterStates || [];
+        console.log('🔍 Verificando estado de muerte de personajes:', charStates);
+
+        // Para 1v1
+        if (this.battleMode === '1v1') {
+            const hero1 = this.currentBattleState.hero1 || this.currentBattleState.char1;
+            const hero2 = this.currentBattleState.hero2 || this.currentBattleState.char2;
+            
+            if (hero1) {
+                const hero1State = charStates.find(c => c.id === hero1.id);
+                if (hero1State && (hero1State.isAlive === false || hero1State.currentHealth <= 0)) {
+                    console.log(`💀 Hero1 (${hero1.alias || hero1.nombre}) está muerto, aplicando efectos...`);
+                    this.applyDeathEffectsToMember(this.elements.playerTeam.querySelector('.team-member'), hero1.alias || hero1.nombre);
+                }
+            }
+            
+            if (hero2) {
+                const hero2State = charStates.find(c => c.id === hero2.id);
+                if (hero2State && (hero2State.isAlive === false || hero2State.currentHealth <= 0)) {
+                    console.log(`💀 Hero2 (${hero2.alias || hero2.nombre}) está muerto, aplicando efectos...`);
+                    this.applyDeathEffectsToMember(this.elements.enemyTeam.querySelector('.team-member'), hero2.alias || hero2.nombre);
+                }
+            }
+        } else {
+            // Para 3v3
+            const team1Ids = this.currentBattleState.equipo1?.miembros || [];
+            const team2Ids = this.currentBattleState.equipo2?.miembros || [];
+            
+            const playerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
+            const enemyMembers = this.elements.enemyTeam.querySelectorAll('.team-member');
+            
+            // Verificar equipo del jugador
+            team1Ids.forEach((charId, index) => {
+                const charState = charStates.find(c => c.id === charId);
+                if (charState && (charState.isAlive === false || charState.currentHealth <= 0)) {
+                    const character = this.getCharacterById(charId);
+                    const characterName = character ? (character.alias || character.nombre) : `Personaje ${index + 1}`;
+                    console.log(`💀 Personaje del equipo jugador (${characterName}) está muerto, aplicando efectos...`);
+                    this.applyDeathEffectsToMember(playerMembers[index], characterName);
+                }
+            });
+            
+            // Verificar equipo enemigo
+            team2Ids.forEach((charId, index) => {
+                const charState = charStates.find(c => c.id === charId);
+                if (charState && (charState.isAlive === false || charState.currentHealth <= 0)) {
+                    const character = this.getCharacterById(charId);
+                    const characterName = character ? (character.alias || character.nombre) : `Personaje ${index + 1}`;
+                    console.log(`💀 Personaje del equipo enemigo (${characterName}) está muerto, aplicando efectos...`);
+                    this.applyDeathEffectsToMember(enemyMembers[index], characterName);
+                }
+            });
+        }
+        
+        // Verificar muerte del equipo después de aplicar efectos
+        this.checkAndHandleTeamDeath();
+    }
+
+    // Aplicar efectos de muerte a un miembro específico
+    applyDeathEffectsToMember(member, characterName) {
+        if (!member) {
+            console.log(`❌ No se encontró el miembro para ${characterName}`);
+            return;
+        }
+
+        console.log(`💀 Aplicando efectos de muerte a ${characterName}`);
+        
+        // Aplicar clases CSS
+        member.classList.add('dead');
+        member.classList.remove('active', 'selectable', 'selected-attacker', 'selected-target');
+        
+        // Aplicar estilos visuales
+        member.style.cursor = 'not-allowed';
+        member.style.filter = 'grayscale(100%)';
+        member.style.opacity = '0.6';
+        
+        // Actualizar texto de estado
+        const statusElement = member.querySelector('.status');
+        if (statusElement) {
+            statusElement.textContent = '💀 Estado: Muerto';
+        }
+        
+        // Agregar icono de muerte al nombre
+        const nameElement = member.querySelector('h4');
+        if (nameElement && !nameElement.textContent.includes('💀')) {
+            nameElement.innerHTML = `💀 ${nameElement.textContent}`;
+        }
+        
+        // Establecer HP a 0 en la barra de vida
+        const healthBar = member.querySelector('.health-fill');
+        if (healthBar) {
+            healthBar.style.width = '0%';
+        }
+        
+        const healthText = member.querySelector('.health-text');
+        if (healthText) {
+            const maxHpMatch = healthText.textContent.match(/\d+\s*\/\s*(\d+)/);
+            const maxHp = maxHpMatch ? parseInt(maxHpMatch[1]) : 100;
+            healthText.textContent = `0 / ${maxHp} HP`;
+        }
+        
+        console.log(`✅ Efectos de muerte aplicados a ${characterName}`);
     }
 
     // Actualizar interfaz de batalla
@@ -967,6 +1155,7 @@ class SuperheroesBattle {
         const hero1CurrentHp = hero1.isAlive === false ? 0 : (hero1.currentHealth || hero1.hp || hero1.health || 100);
         const hero1MaxHp = hero1.maxHp || hero1.maxHealth || 100;
         const hero1HealthPercentage = (hero1CurrentHp / hero1MaxHp) * 100;
+        const hero1IsDead = hero1.isAlive === false || hero1CurrentHp <= 0;
         
         console.log('📊 Hero1 datos:', {
             nombre: hero1.nombre,
@@ -974,13 +1163,15 @@ class SuperheroesBattle {
             isAlive: hero1.isAlive,
             calculatedHp: hero1CurrentHp,
             maxHp: hero1MaxHp,
-            percentage: hero1HealthPercentage
+            percentage: hero1HealthPercentage,
+            isDead: hero1IsDead
         });
 
         // Calcular vida para hero2
         const hero2CurrentHp = hero2.isAlive === false ? 0 : (hero2.currentHealth || hero2.hp || hero2.health || 100);
         const hero2MaxHp = hero2.maxHp || hero2.maxHealth || 100;
         const hero2HealthPercentage = (hero2CurrentHp / hero2MaxHp) * 100;
+        const hero2IsDead = hero2.isAlive === false || hero2CurrentHp <= 0;
         
         console.log('📊 Hero2 datos:', {
             nombre: hero2.nombre,
@@ -988,7 +1179,8 @@ class SuperheroesBattle {
             isAlive: hero2.isAlive,
             calculatedHp: hero2CurrentHp,
             maxHp: hero2MaxHp,
-            percentage: hero2HealthPercentage
+            percentage: hero2HealthPercentage,
+            isDead: hero2IsDead
         });
 
         this.elements.playerTeam.innerHTML = `
@@ -1040,7 +1232,19 @@ class SuperheroesBattle {
 
         const isPlayerTurn = battleState.turnoActual === 'jugador' || battleState.currentTurn === 'player';
         this.elements.turnIndicator.textContent = isPlayerTurn ? 'Tu turno' : 'Turno del enemigo';
+        
+        // Deshabilitar botón de ataque si el personaje del jugador está muerto
         this.elements.attackBtn.disabled = !isPlayerTurn || hero1IsDead;
+        
+        // Si el personaje del jugador está muerto, cambiar el texto del botón
+        if (hero1IsDead) {
+            this.elements.attackBtn.textContent = '💀 Personaje Muerto';
+        } else if (!isPlayerTurn) {
+            this.elements.attackBtn.textContent = '⏳ Turno del Enemigo';
+        } else {
+            this.elements.attackBtn.textContent = '⚔️ Realizar Ataque';
+        }
+        
         this.enableManualSelection();
         console.log('✅ UI 1v1 actualizada');
     }
@@ -1104,7 +1308,8 @@ class SuperheroesBattle {
                 isAlive: hero.isAlive,
                 calculatedHp: currentHp,
                 maxHp: maxHp,
-                percentage: healthPercentage
+                percentage: healthPercentage,
+                isDead: !isAlive
             });
             
             return `
@@ -1131,7 +1336,8 @@ class SuperheroesBattle {
                 isAlive: hero.isAlive,
                 calculatedHp: currentHp,
                 maxHp: maxHp,
-                percentage: healthPercentage
+                percentage: healthPercentage,
+                isDead: !isAlive
             });
             
             return `
@@ -1178,6 +1384,15 @@ class SuperheroesBattle {
         // Verificar si el equipo del jugador está completamente muerto
         const playerTeamAlive = Array.from(allPlayerMembers).some(member => !member.classList.contains('dead'));
         this.elements.attackBtn.disabled = !isPlayerTurn || !playerTeamAlive;
+        
+        // Cambiar texto del botón según el estado
+        if (!playerTeamAlive) {
+            this.elements.attackBtn.textContent = '💀 Equipo Derrotado';
+        } else if (!isPlayerTurn) {
+            this.elements.attackBtn.textContent = '⏳ Turno del Enemigo';
+        } else {
+            this.elements.attackBtn.textContent = '⚔️ Realizar Ataque';
+        }
         
         this.enableManualSelection();
         console.log('✅ UI 3v3 actualizada');
@@ -1229,9 +1444,14 @@ class SuperheroesBattle {
             const playerState = charStates.find(c => c.id === hero1?.id);
             const playerIsAlive = playerState ? (playerState.isAlive !== false && playerState.currentHealth > 0) : true;
             
+            // Solo hacer selectable si no está muerto (tanto en CSS como en datos)
             if (playerMember && !playerMember.classList.contains('dead') && playerIsAlive) {
                 playerMember.classList.add('selectable');
                 playerMember.addEventListener('click', () => this.selectAttacker(0));
+            } else if (playerMember && (playerMember.classList.contains('dead') || !playerIsAlive)) {
+                // Marcar visualmente como no seleccionable
+                playerMember.classList.add('dead');
+                playerMember.style.cursor = 'not-allowed';
             }
             
             // Verificar estado del personaje enemigo usando datos del estado de batalla
@@ -1239,9 +1459,14 @@ class SuperheroesBattle {
             const enemyState = charStates.find(c => c.id === hero2?.id);
             const enemyIsAlive = enemyState ? (enemyState.isAlive !== false && enemyState.currentHealth > 0) : true;
             
+            // Solo hacer selectable si no está muerto (tanto en CSS como en datos)
             if (enemyMember && !enemyMember.classList.contains('dead') && enemyIsAlive) {
                 enemyMember.classList.add('selectable');
                 enemyMember.addEventListener('click', () => this.selectTarget(0));
+            } else if (enemyMember && (enemyMember.classList.contains('dead') || !enemyIsAlive)) {
+                // Marcar visualmente como no seleccionable
+                enemyMember.classList.add('dead');
+                enemyMember.style.cursor = 'not-allowed';
             }
         } else {
             // Para 3v3, agregar listeners a todos los miembros del equipo
@@ -1258,6 +1483,10 @@ class SuperheroesBattle {
                 if (!member.classList.contains('dead') && isAlive) {
                     member.classList.add('selectable');
                     member.addEventListener('click', () => this.selectAttacker(index));
+                } else if (member.classList.contains('dead') || !isAlive) {
+                    // Marcar visualmente como no seleccionable
+                    member.classList.add('dead');
+                    member.style.cursor = 'not-allowed';
                 }
             });
 
@@ -1274,6 +1503,10 @@ class SuperheroesBattle {
                 if (!member.classList.contains('dead') && isAlive) {
                     member.classList.add('selectable');
                     member.addEventListener('click', () => this.selectTarget(index));
+                } else if (member.classList.contains('dead') || !isAlive) {
+                    // Marcar visualmente como no seleccionable
+                    member.classList.add('dead');
+                    member.style.cursor = 'not-allowed';
                 }
             });
         }
@@ -1659,9 +1892,13 @@ class SuperheroesBattle {
             this.elements.attackBtn.disabled = true;
             this.elements.attackBtn.textContent = '💀 Equipo Derrotado';
             
+            // Deshabilitar selección manual
+            this.disableManualSelection();
+            
             // Mostrar mensaje de derrota
             setTimeout(() => {
                 this.showGameMessage('💀 ¡Tu equipo ha sido derrotado!', 'error');
+                this.addLogEntry('💀 ¡Tu equipo ha sido derrotado! El juego ha terminado.', 'error');
             }, 2000);
         }
         
@@ -1675,6 +1912,7 @@ class SuperheroesBattle {
             // Mostrar mensaje de victoria
             setTimeout(() => {
                 this.showGameMessage('🏆 ¡Has derrotado al equipo enemigo!', 'success');
+                this.addLogEntry('🏆 ¡Has derrotado al equipo enemigo! ¡Victoria!', 'success');
             }, 2000);
         }
         
@@ -1683,7 +1921,23 @@ class SuperheroesBattle {
             console.log('🤝 Empate! Ambos equipos están muertos');
             setTimeout(() => {
                 this.showGameMessage('🤝 ¡Empate! Ambos equipos han sido derrotados', 'info');
+                this.addLogEntry('🤝 ¡Empate! Ambos equipos han sido derrotados simultáneamente.', 'info');
             }, 3000);
+        }
+        
+        // Si solo un equipo está muerto, deshabilitar controles apropiadamente
+        if (playerTeamDead || enemyTeamDead) {
+            // Deshabilitar selección manual si algún equipo está completamente muerto
+            this.disableManualSelection();
+            
+            // Cambiar texto del botón según el resultado
+            if (playerTeamDead && !enemyTeamDead) {
+                this.elements.attackBtn.textContent = '💀 Derrota';
+                this.elements.attackBtn.disabled = true;
+            } else if (!playerTeamDead && enemyTeamDead) {
+                this.elements.attackBtn.textContent = '🏆 Victoria';
+                this.elements.attackBtn.disabled = true;
+            }
         }
     }
 
@@ -1722,28 +1976,53 @@ class SuperheroesBattle {
                     
                     // Aplicar efectos visuales de muerte
                     member.classList.add('dead');
-                    member.classList.remove('active');
-                    member.classList.remove('selectable');
-                    statusElement.textContent = 'Estado: Muerto';
+                    member.classList.remove('active', 'selectable', 'selected-attacker', 'selected-target');
+                    member.style.cursor = 'not-allowed';
+                    member.style.filter = 'grayscale(100%)';
+                    member.style.opacity = '0.6';
+                    
+                    statusElement.textContent = '💀 Estado: Muerto';
                     console.log(`💀 ${characterName} marcado como muerto`);
+                    
+                    // Agregar icono de muerte al nombre si no existe
+                    const nameElement = member.querySelector('h4');
+                    if (nameElement && !nameElement.textContent.includes('💀')) {
+                        nameElement.innerHTML = `💀 ${nameElement.textContent}`;
+                    }
                     
                     // Mostrar mensaje al usuario
                     this.addLogEntry(`💀 ${characterName} ha muerto en batalla`, 'error');
                     this.showGameMessage(`${characterName} ha muerto en batalla`, 'error');
+                    
+                    // Reproducir sonido de muerte
+                    this.playDeathSound();
+                    
                 } else {
                     console.log(`❤️ Removiendo efectos de muerte para: ${characterName}`);
                     
                     // Remover efectos de muerte si el personaje revive
                     member.classList.remove('dead');
+                    member.style.cursor = 'pointer';
+                    member.style.filter = 'none';
+                    member.style.opacity = '1';
+                    
                     if (member.parentElement === this.elements.playerTeam) {
                         member.classList.add('active');
                     }
-                    // Solo hacer selectable si no está muerto
+                    
+                    // Solo hacer selectable si no está muerto y la selección manual está habilitada
                     if (this.isManualSelectionEnabled) {
                         member.classList.add('selectable');
                     }
-                    statusElement.textContent = 'Estado: Normal';
+                    
+                    statusElement.textContent = '❤️ Estado: Normal';
                     console.log(`❤️ ${characterName} marcado como vivo`);
+                    
+                    // Remover icono de muerte del nombre
+                    const nameElement = member.querySelector('h4');
+                    if (nameElement && nameElement.textContent.includes('💀')) {
+                        nameElement.innerHTML = nameElement.textContent.replace('💀 ', '');
+                    }
                 }
             }
 
@@ -1812,8 +2091,8 @@ class SuperheroesBattle {
             
             if (!attackerIsAlive || attackerHp <= 0) {
                 const attackerName = this.selectedAttacker.alias || this.selectedAttacker.nombre || 'Atacante';
-                this.addLogEntry(`💀 ${attackerName} está muerto y no puede atacar`, 'error');
-                this.showGameMessage(`${attackerName} está muerto y no puede atacar`, 'error');
+                this.addLogEntry(`💀 ${attackerName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
+                this.showGameMessage(`${attackerName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
                 return;
             }
         } else {
@@ -1821,8 +2100,8 @@ class SuperheroesBattle {
             const attackerHp = this.selectedAttacker.hp || this.selectedAttacker.health || this.selectedAttacker.currentHealth || 100;
             if (attackerHp <= 0) {
                 const attackerName = this.selectedAttacker.alias || this.selectedAttacker.nombre || 'Atacante';
-                this.addLogEntry(`💀 ${attackerName} está muerto y no puede atacar`, 'error');
-                this.showGameMessage(`${attackerName} está muerto y no puede atacar`, 'error');
+                this.addLogEntry(`💀 ${attackerName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
+                this.showGameMessage(`${attackerName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
                 return;
             }
         }
@@ -1836,8 +2115,8 @@ class SuperheroesBattle {
             
             if (!targetIsAlive || targetHp <= 0) {
                 const targetName = this.selectedTarget.alias || this.selectedTarget.nombre || 'Objetivo';
-                this.addLogEntry(`💀 ${targetName} está muerto y no puede ser atacado`, 'error');
-                this.showGameMessage(`${targetName} está muerto y no puede ser atacado`, 'error');
+                this.addLogEntry(`💀 ${targetName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
+                this.showGameMessage(`${targetName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
                 return;
             }
         } else {
@@ -1845,10 +2124,18 @@ class SuperheroesBattle {
             const targetHp = this.selectedTarget.hp || this.selectedTarget.health || this.selectedTarget.currentHealth || 100;
             if (targetHp <= 0) {
                 const targetName = this.selectedTarget.alias || this.selectedTarget.nombre || 'Objetivo';
-                this.addLogEntry(`💀 ${targetName} está muerto y no puede ser atacado`, 'error');
-                this.showGameMessage(`${targetName} está muerto y no puede ser atacado`, 'error');
+                this.addLogEntry(`💀 ${targetName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
+                this.showGameMessage(`${targetName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
                 return;
             }
+        }
+
+        // Verificar que sea el turno del jugador
+        const isPlayerTurn = this.currentBattleState.turnoActual === 'jugador' || this.currentBattleState.currentTurn === 'player';
+        if (!isPlayerTurn) {
+            this.addLogEntry('⏳ No es tu turno. Espera a que el enemigo complete su acción.', 'error');
+            this.showGameMessage('No es tu turno. Espera a que el enemigo complete su acción.', 'error');
+            return;
         }
 
         // Deshabilitar selección manual mientras se procesa el ataque
@@ -2169,6 +2456,11 @@ class SuperheroesBattle {
         
         // Mostrar rounds
         this.displayBattleRounds();
+        
+        // Limpiar datos de batalla después de mostrar recapitulación
+        setTimeout(() => {
+            this.clearBattleData();
+        }, 10000);
     }
 
     // Mostrar estadísticas de batalla
@@ -2290,44 +2582,13 @@ class SuperheroesBattle {
         this.selectedEnemy = null;
         this.selectedTeam = [];
         this.selectedEnemyTeam = [];
-        this.currentBattleId = '';
-        this.currentBattleState = null;
-        this.isPlayerTurn = true;
         this.battleMode = '1v1';
-        this.battleRounds = [];
-        this.isAutoPlaying = false;
-        this.battleStats = {};
-        this.currentTurn = 'player';
+        this.clearBattleData();
         
-        // Limpiar efectos visuales de muerte
+        // Limpiar UI
         this.clearDeathEffects();
         
-        // Resetear botones
-        this.elements.startBtn1v1.disabled = false;
-        this.elements.startBtn1v1.textContent = '⚔️ Batalla 1v1';
-        this.elements.startBtn3v3.disabled = false;
-        this.elements.startBtn3v3.textContent = '⚔️⚔️⚔️ Batalla 3v3';
-        this.elements.startBattleBtn1v1.disabled = true;
-        this.elements.startBattleBtn1v1.textContent = '⚔️ Iniciar Batalla 1v1';
-        this.elements.startBattleBtn3v3.disabled = true;
-        this.elements.startBattleBtn3v3.textContent = '⚔️⚔️⚔️ Iniciar Batalla 3v3';
-        this.elements.attackBtn.disabled = false;
-        this.elements.attackBtn.textContent = '⚔️ Realizar Ataque';
-        this.elements.autoPlayBtn.textContent = '▶️ Auto Play';
-        this.elements.autoPlayBtn.classList.remove('btn-warning');
-        
-        // Limpiar contenido
-        this.elements.battleLog.innerHTML = '';
-        this.elements.charactersGrid1v1.innerHTML = '';
-        this.elements.charactersGrid3v3.innerHTML = '';
-        this.elements.playerTeam.innerHTML = '';
-        this.elements.enemyTeam.innerHTML = '';
-        this.elements.battleStats.innerHTML = '';
-        this.elements.roundsLog.innerHTML = '';
-        
-        // Limpiar selecciones
-        document.querySelectorAll('.move-btn').forEach(btn => btn.classList.remove('selected'));
-        this.updateTeamDisplay();
+        console.log('🔄 Juego reseteado');
     }
 
     // Función para limpiar efectos visuales de muerte
@@ -2395,42 +2656,17 @@ class SuperheroesBattle {
 
     // Función para manejar el final de la batalla
     handleBattleEnd(winner) {
-        console.log(`🏁 Batalla finalizada! Ganador: ${winner}`);
+        console.log('🏁 Batalla finalizada. Ganador:', winner);
         
-        // Mostrar mensaje de victoria/derrota
-        const message = winner === 'jugador' ? 
-            '🎉 ¡Victoria! Has ganado la batalla!' : 
-            '💀 Derrota. El enemigo ha ganado la batalla.';
-        
-        this.showMessage(message, winner === 'jugador' ? 'success' : 'error');
-        
-        // Deshabilitar botones de ataque
-        this.elements.attackBtn.disabled = true;
-        this.elements.attackBtn.textContent = '🏁 Batalla Terminada';
-        
-        // Agregar entrada al log
-        this.addLogEntry(message, winner === 'jugador' ? 'success' : 'error');
-        
-        // Opcional: Mostrar resumen de la batalla después de un delay
+        // Limpiar datos de batalla después de un delay
         setTimeout(() => {
-            this.showBattleRecap(winner);
-        }, 2000);
-    }
-
-    // Función para mostrar resumen de la batalla
-    showBattleRecap(winner) {
-        const recapDiv = document.createElement('div');
-        recapDiv.className = 'battle-recap';
-        recapDiv.innerHTML = `
-            <div class="recap-content">
-                <h3>🏁 Resumen de la Batalla</h3>
-                <p><strong>Ganador:</strong> ${winner === 'jugador' ? 'Jugador' : 'Enemigo'}</p>
-                <p><strong>Estado:</strong> Finalizada</p>
-                <button onclick="this.parentElement.parentElement.remove()">Cerrar</button>
-            </div>
-        `;
+            this.clearBattleData();
+        }, 5000);
         
-        document.body.appendChild(recapDiv);
+        // Mostrar mensaje de resultado
+        const isVictory = winner === 'player' || winner === 'team1';
+        const message = isVictory ? '🏆 ¡Victoria!' : '💀 Derrota';
+        this.showGameMessage(message, isVictory ? 'success' : 'error');
     }
 
     // Función para mostrar notificación de muerte
@@ -2484,9 +2720,6 @@ class SuperheroesBattle {
         // cuando un personaje muere. Por ahora solo muestra un mensaje.
         console.log('🔊 Reproduciendo sonido de muerte...');
         // Aquí se podría agregar código para reproducir un archivo de audio
-        // Ejemplo:
-        // const audio = new Audio('death-sound.mp3');
-        // audio.play();
     }
 
     // Función de prueba para simular muerte de personajes (solo para debugging)
@@ -2516,6 +2749,22 @@ class SuperheroesBattle {
                 this.updateCharacterHealth(characterName, 0);
             }
         }
+    }
+
+    // Limpiar datos de batalla
+    clearBattleData() {
+        this.currentBattleId = '';
+        this.currentBattleState = null;
+        this.selectedAttacker = null;
+        this.selectedTarget = null;
+        this.battleRounds = [];
+        this.battleStats = {};
+        this.isAutoPlaying = false;
+        
+        // Limpiar localStorage
+        localStorage.removeItem('currentBattleId');
+        
+        console.log('🧹 Datos de batalla limpiados');
     }
 }
 

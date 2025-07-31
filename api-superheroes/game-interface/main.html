@@ -507,9 +507,17 @@
         const API_BASE_URL = 'https://pelea.onrender.com/api';
 
         // Audio de fondo
-        const backgroundMusic = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        const backgroundMusic = new Audio('./music/00) Opening.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.3;
+        
+        // Debug audio loading
+        backgroundMusic.addEventListener('loadstart', () => console.log('Audio loading started'));
+        backgroundMusic.addEventListener('canplay', () => console.log('Audio can play'));
+        backgroundMusic.addEventListener('error', (e) => console.error('Audio error:', e));
+        
+        // Intentar cargar el audio inmediatamente
+        backgroundMusic.load();
 
         // Elementos del DOM
         const loginSection = document.getElementById('loginSection');

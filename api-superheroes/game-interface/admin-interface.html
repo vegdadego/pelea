@@ -8,6 +8,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Botón de control de audio -->
+    <button class="audio-control" id="audioControl">
+        <i class="fas fa-volume-up"></i>
+    </button>
+
     <div class="admin-container">
         <!-- Header -->
         <header class="admin-header">
@@ -233,6 +238,61 @@
         </div>
     </div>
 
+    <script>
+        // Audio de fondo
+        let isAudioOn = true;
+        const backgroundMusic = new Audio('./music/00) Opening.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.3;
+        
+        // Debug audio loading
+        backgroundMusic.addEventListener('loadstart', () => console.log('Audio loading started'));
+        backgroundMusic.addEventListener('canplay', () => console.log('Audio can play'));
+        backgroundMusic.addEventListener('error', (e) => console.error('Audio error:', e));
+        backgroundMusic.addEventListener('play', () => console.log('Audio playing'));
+        backgroundMusic.addEventListener('pause', () => console.log('Audio paused'));
+        
+        // Intentar cargar el audio inmediatamente
+        backgroundMusic.load();
+        
+        // Control de audio
+        document.getElementById('audioControl').addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (isAudioOn) {
+                backgroundMusic.pause();
+                icon.className = 'fas fa-volume-mute';
+                this.style.background = '#ff4444';
+                isAudioOn = false;
+            } else {
+                backgroundMusic.play().catch(e => console.error('Error playing audio:', e));
+                icon.className = 'fas fa-volume-up';
+                this.style.background = '#44ff44';
+                isAudioOn = true;
+            }
+        });
+        
+        // Intentar reproducir audio en la primera interacción del usuario
+        document.addEventListener('click', function() {
+            if (isAudioOn && backgroundMusic.paused) {
+                backgroundMusic.play().catch(e => console.error('Error playing audio:', e));
+            }
+        }, { once: true });
+        
+        // Intentar reproducir después de un delay
+        setTimeout(() => {
+            if (isAudioOn && backgroundMusic.paused) {
+                backgroundMusic.play().catch(e => console.error('Error playing audio:', e));
+            }
+        }, 1000);
+        
+        // Intentar reproducir cuando la página esté completamente cargada
+        window.addEventListener('load', function() {
+            backgroundMusic.load();
+            if (isAudioOn && backgroundMusic.paused) {
+                backgroundMusic.play().catch(e => console.error('Error playing audio:', e));
+            }
+        });
+    </script>
     <script src="admin-interface.js"></script>
 </body>
 </html> 
