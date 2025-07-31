@@ -148,6 +148,12 @@ class SuperheroesBattle {
         this.elements.newBattleBtn.addEventListener('click', () => this.newBattle());
         this.elements.backToMenuBtn.addEventListener('click', () => this.backToMenu());
 
+        // Event listener para el botón de prueba de efectos de muerte
+        const testDeathBtn = document.getElementById('testDeathBtn');
+        if (testDeathBtn) {
+            testDeathBtn.addEventListener('click', () => this.testDeathEffects());
+        }
+
         // Event listeners para movimientos
         document.querySelectorAll('.move-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.selectMove(e.target));
@@ -961,37 +967,64 @@ class SuperheroesBattle {
         const hero1CurrentHp = hero1.isAlive === false ? 0 : (hero1.currentHealth || hero1.hp || hero1.health || 100);
         const hero1MaxHp = hero1.maxHp || hero1.maxHealth || 100;
         const hero1HealthPercentage = (hero1CurrentHp / hero1MaxHp) * 100;
+        const hero1IsDead = hero1.isAlive === false || hero1CurrentHp <= 0;
 
         // Calcular vida para hero2
         const hero2CurrentHp = hero2.isAlive === false ? 0 : (hero2.currentHealth || hero2.hp || hero2.health || 100);
         const hero2MaxHp = hero2.maxHp || hero2.maxHealth || 100;
         const hero2HealthPercentage = (hero2CurrentHp / hero2MaxHp) * 100;
+        const hero2IsDead = hero2.isAlive === false || hero2CurrentHp <= 0;
 
         this.elements.playerTeam.innerHTML = `
-            <div class="team-member ${hero1.isAlive === false ? 'dead' : 'active'}">
+            <div class="team-member ${hero1IsDead ? 'dead' : 'active'}">
                 <h4>${hero1.alias || hero1.nombre}</h4>
                 <div class="health-bar">
                     <div class="health-fill" style="width: ${hero1HealthPercentage}%"></div>
                 </div>
                 <div class="health-text">${hero1CurrentHp} / ${hero1MaxHp} HP</div>
-                <div class="status">${hero1.isAlive === false ? 'Estado: Muerto' : 'Estado: Normal'}</div>
+                <div class="status">${hero1IsDead ? '💀 Estado: Muerto' : '❤️ Estado: Normal'}</div>
             </div>
         `;
 
         this.elements.enemyTeam.innerHTML = `
-            <div class="team-member ${hero2.isAlive === false ? 'dead' : ''}">
+            <div class="team-member ${hero2IsDead ? 'dead' : ''}">
                 <h4>${hero2.alias || hero2.nombre}</h4>
                 <div class="health-bar">
                     <div class="health-fill" style="width: ${hero2HealthPercentage}%"></div>
                 </div>
                 <div class="health-text">${hero2CurrentHp} / ${hero2MaxHp} HP</div>
-                <div class="status">${hero2.isAlive === false ? 'Estado: Muerto' : 'Estado: Normal'}</div>
+                <div class="status">${hero2IsDead ? '💀 Estado: Muerto' : '❤️ Estado: Normal'}</div>
             </div>
         `;
 
+        // Aplicar efectos visuales adicionales si están muertos
+        if (hero1IsDead) {
+            const playerMember = this.elements.playerTeam.querySelector('.team-member');
+            if (playerMember) {
+                playerMember.style.filter = 'grayscale(100%)';
+                playerMember.style.opacity = '0.6';
+                const nameElement = playerMember.querySelector('h4');
+                if (nameElement) {
+                    nameElement.innerHTML = `💀 ${nameElement.textContent}`;
+                }
+            }
+        }
+
+        if (hero2IsDead) {
+            const enemyMember = this.elements.enemyTeam.querySelector('.team-member');
+            if (enemyMember) {
+                enemyMember.style.filter = 'grayscale(100%)';
+                enemyMember.style.opacity = '0.6';
+                const nameElement = enemyMember.querySelector('h4');
+                if (nameElement) {
+                    nameElement.innerHTML = `💀 ${nameElement.textContent}`;
+                }
+            }
+        }
+
         const isPlayerTurn = battleState.turnoActual === 'jugador' || battleState.currentTurn === 'player';
         this.elements.turnIndicator.textContent = isPlayerTurn ? 'Tu turno' : 'Turno del enemigo';
-        this.elements.attackBtn.disabled = !isPlayerTurn;
+        this.elements.attackBtn.disabled = !isPlayerTurn || hero1IsDead;
         this.enableManualSelection();
         console.log('✅ UI 1v1 actualizada');
     }
@@ -1056,7 +1089,7 @@ class SuperheroesBattle {
                         <div class="health-fill" style="width: ${healthPercentage}%"></div>
                     </div>
                     <div class="health-text">${currentHp} / ${maxHp} HP</div>
-                    <div class="status">${isAlive ? 'Estado: Normal' : 'Estado: Muerto'}</div>
+                    <div class="status">${isAlive ? '❤️ Estado: Normal' : '💀 Estado: Muerto'}</div>
                 </div>
             `;
         }).join('');
@@ -1074,14 +1107,44 @@ class SuperheroesBattle {
                         <div class="health-fill" style="width: ${healthPercentage}%"></div>
                     </div>
                     <div class="health-text">${currentHp} / ${maxHp} HP</div>
-                    <div class="status">${isAlive ? 'Estado: Normal' : 'Estado: Muerto'}</div>
+                    <div class="status">${isAlive ? '❤️ Estado: Normal' : '💀 Estado: Muerto'}</div>
                 </div>
             `;
         }).join('');
 
+        // Aplicar efectos visuales adicionales para personajes muertos
+        const allPlayerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
+        const allEnemyMembers = this.elements.enemyTeam.querySelectorAll('.team-member');
+
+        allPlayerMembers.forEach((member, index) => {
+            if (member.classList.contains('dead')) {
+                member.style.filter = 'grayscale(100%)';
+                member.style.opacity = '0.6';
+                const nameElement = member.querySelector('h4');
+                if (nameElement) {
+                    nameElement.innerHTML = `💀 ${nameElement.textContent}`;
+                }
+            }
+        });
+
+        allEnemyMembers.forEach((member, index) => {
+            if (member.classList.contains('dead')) {
+                member.style.filter = 'grayscale(100%)';
+                member.style.opacity = '0.6';
+                const nameElement = member.querySelector('h4');
+                if (nameElement) {
+                    nameElement.innerHTML = `💀 ${nameElement.textContent}`;
+                }
+            }
+        });
+
         const isPlayerTurn = battleState.turnoActual === 'jugador' || battleState.currentTurn === 'player';
         this.elements.turnIndicator.textContent = isPlayerTurn ? 'Tu turno' : 'Turno del enemigo';
-        this.elements.attackBtn.disabled = !isPlayerTurn;
+        
+        // Verificar si el equipo del jugador está completamente muerto
+        const playerTeamAlive = Array.from(allPlayerMembers).some(member => !member.classList.contains('dead'));
+        this.elements.attackBtn.disabled = !isPlayerTurn || !playerTeamAlive;
+        
         this.enableManualSelection();
         console.log('✅ UI 3v3 actualizada');
     }
@@ -1314,9 +1377,14 @@ class SuperheroesBattle {
             const characterName = hpMatch[1].trim();
             const currentHp = parseInt(hpMatch[2]);
             
+            console.log(`🔍 Regex match encontrado:`);
+            console.log(`  - Nombre extraído: "${characterName}"`);
+            console.log(`  - HP extraído: ${currentHp} (tipo: ${typeof currentHp})`);
+            
             // Validar que el nombre no esté vacío y el HP sea un número válido
             if (characterName && !isNaN(currentHp) && currentHp >= 0) {
                 console.log(`✅ Extraído: "${characterName}" tiene ${currentHp} HP`);
+                console.log(`🔍 ¿HP <= 0?: ${currentHp <= 0}`);
                 return {
                     characterName: characterName,
                     currentHp: currentHp
@@ -1334,9 +1402,14 @@ class SuperheroesBattle {
             const characterName = altMatch[1].trim();
             const currentHp = parseInt(altMatch[2]);
             
+            console.log(`🔍 Regex alternativo match encontrado:`);
+            console.log(`  - Nombre extraído: "${characterName}"`);
+            console.log(`  - HP extraído: ${currentHp} (tipo: ${typeof currentHp})`);
+            
             // Validar que el nombre no esté vacío y el HP sea un número válido
             if (characterName && !isNaN(currentHp) && currentHp >= 0) {
                 console.log(`✅ Extraído (regex alternativo): "${characterName}" tiene ${currentHp} HP`);
+                console.log(`🔍 ¿HP <= 0?: ${currentHp <= 0}`);
                 return {
                     characterName: characterName,
                     currentHp: currentHp
@@ -1353,6 +1426,8 @@ class SuperheroesBattle {
     // Función para actualizar la vida de un personaje en la UI
     updateCharacterHealth(characterName, newHp) {
         console.log(`🎯 Intentando actualizar vida de: ${characterName} a ${newHp} HP`);
+        console.log(`🔍 Tipo de newHp: ${typeof newHp}, Valor: ${newHp}`);
+        console.log(`🔍 ¿newHp <= 0?: ${newHp <= 0}`);
         
         // Buscar el personaje en ambos equipos
         const playerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
@@ -1382,7 +1457,15 @@ class SuperheroesBattle {
                 // Coincidencia exacta
                 if (memberName === characterName) {
                     console.log(`✅ Coincidencia exacta encontrada: ${characterName}`);
+                    console.log(`🎯 Llamando a updateHealthBar con HP: ${newHp}`);
                     this.updateHealthBar(member, characterName, newHp);
+                    
+                    // Verificar si el personaje murió y si todo el equipo está muerto
+                    if (newHp <= 0) {
+                        console.log(`💀 Personaje ${characterName} murió (HP: ${newHp}), verificando muerte del equipo...`);
+                        this.checkAndHandleTeamDeath();
+                    }
+                    
                     return;
                 }
             }
@@ -1409,7 +1492,15 @@ class SuperheroesBattle {
                             const memberName = nameElement.textContent.trim();
                             if (memberName === searchName) {
                                 console.log(`✅ Encontrado en UI usando ${searchName}: ${characterName}`);
+                                console.log(`🎯 Llamando a updateHealthBar con HP: ${newHp}`);
                                 this.updateHealthBar(member, characterName, newHp);
+                                
+                                // Verificar si el personaje murió y si todo el equipo está muerto
+                                if (newHp <= 0) {
+                                    console.log(`💀 Personaje ${characterName} murió (HP: ${newHp}), verificando muerte del equipo...`);
+                                    this.checkAndHandleTeamDeath();
+                                }
+                                
                                 return;
                             }
                         }
@@ -1430,7 +1521,15 @@ class SuperheroesBattle {
                     memberName.toLowerCase().includes(characterName.toLowerCase()) ||
                     characterName.toLowerCase().includes(memberName.toLowerCase())) {
                     console.log(`✅ Coincidencia parcial encontrada: "${memberName}" con "${characterName}"`);
+                    console.log(`🎯 Llamando a updateHealthBar con HP: ${newHp}`);
                     this.updateHealthBar(member, characterName, newHp);
+                    
+                    // Verificar si el personaje murió y si todo el equipo está muerto
+                    if (newHp <= 0) {
+                        console.log(`💀 Personaje ${characterName} murió (HP: ${newHp}), verificando muerte del equipo...`);
+                        this.checkAndHandleTeamDeath();
+                    }
+                    
                     return;
                 }
             }
@@ -1438,9 +1537,57 @@ class SuperheroesBattle {
         
         console.log(`❌ No se encontró el personaje: ${characterName}`);
     }
-    
+
+    // Función para verificar si todo un equipo ha muerto y manejar los efectos
+    checkAndHandleTeamDeath() {
+        const playerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
+        const enemyMembers = this.elements.enemyTeam.querySelectorAll('.team-member');
+        
+        // Verificar si todo el equipo del jugador está muerto
+        const playerTeamDead = this.checkTeamDeath(playerMembers);
+        if (playerTeamDead) {
+            console.log('💀 Todo el equipo del jugador está muerto!');
+            this.showTeamDeathEffects(true);
+            this.elements.playerTeam.classList.add('defeated');
+            
+            // Deshabilitar controles del jugador
+            this.elements.attackBtn.disabled = true;
+            this.elements.attackBtn.textContent = '💀 Equipo Derrotado';
+            
+            // Mostrar mensaje de derrota
+            setTimeout(() => {
+                this.showGameMessage('💀 ¡Tu equipo ha sido derrotado!', 'error');
+            }, 2000);
+        }
+        
+        // Verificar si todo el equipo enemigo está muerto
+        const enemyTeamDead = this.checkTeamDeath(enemyMembers);
+        if (enemyTeamDead) {
+            console.log('🏆 Todo el equipo enemigo está muerto!');
+            this.showTeamDeathEffects(false);
+            this.elements.enemyTeam.classList.add('defeated');
+            
+            // Mostrar mensaje de victoria
+            setTimeout(() => {
+                this.showGameMessage('🏆 ¡Has derrotado al equipo enemigo!', 'success');
+            }, 2000);
+        }
+        
+        // Si ambos equipos están muertos (empate)
+        if (playerTeamDead && enemyTeamDead) {
+            console.log('🤝 Empate! Ambos equipos están muertos');
+            setTimeout(() => {
+                this.showGameMessage('🤝 ¡Empate! Ambos equipos han sido derrotados', 'info');
+            }, 3000);
+        }
+    }
+
     // Función auxiliar para actualizar la barra de vida
     updateHealthBar(member, characterName, newHp) {
+        console.log(`📊 updateHealthBar llamado para: ${characterName} con HP: ${newHp}`);
+        console.log(`🔍 Tipo de newHp: ${typeof newHp}, Valor: ${newHp}`);
+        console.log(`🔍 ¿newHp <= 0?: ${newHp <= 0}`);
+        
         const healthBar = member.querySelector('.health-fill');
         const healthText = member.querySelector('.health-text');
 
@@ -1466,16 +1613,78 @@ class SuperheroesBattle {
             const statusElement = member.querySelector('.status');
             if (statusElement) {
                 if (newHp <= 0) {
+                    console.log(`💀 Aplicando efectos de muerte para: ${characterName}`);
+                    
+                    // Aplicar efectos visuales de muerte
                     member.classList.add('dead');
                     member.classList.remove('active');
-                    statusElement.textContent = 'Estado: Muerto';
-                    console.log(`💀 ${characterName} marcado como muerto`);
+                    statusElement.textContent = '💀 Estado: Muerto';
+                    
+                    console.log(`✅ Clase 'dead' agregada a ${characterName}`);
+                    console.log(`✅ Clase 'active' removida de ${characterName}`);
+                    console.log(`✅ Estado actualizado a '💀 Estado: Muerto'`);
+                    
+                    // Agregar efectos visuales adicionales
+                    member.style.filter = 'grayscale(100%)';
+                    member.style.opacity = '0.6';
+                    
+                    console.log(`✅ Filtro grayscale aplicado`);
+                    console.log(`✅ Opacidad reducida a 0.6`);
+                    
+                    // Agregar icono de muerte
+                    const nameElement = member.querySelector('h4');
+                    if (nameElement) {
+                        nameElement.innerHTML = `💀 ${nameElement.textContent}`;
+                        console.log(`✅ Icono de muerte agregado al nombre`);
+                    }
+                    
+                    // Agregar animación de muerte
+                    member.style.animation = 'deathShake 0.5s ease-in-out';
+                    console.log(`✅ Animación deathShake aplicada`);
+                    
+                    console.log(`💀 ${characterName} marcado como muerto con efectos visuales`);
+                    
+                    // Mostrar mensaje en el log
+                    this.addLogEntry(`💀 ${characterName} ha muerto!`, 'error');
+                    
+                    // Determinar si es un personaje del jugador o enemigo
+                    const isPlayerCharacter = member.parentElement === this.elements.playerTeam;
+                    
+                    // Mostrar notificación de muerte
+                    this.showDeathNotification(characterName, isPlayerCharacter);
+                    
+                    // Reproducir sonido de muerte (si está disponible)
+                    this.playDeathSound();
+                    
                 } else {
+                    console.log(`❤️ Removiendo efectos de muerte para: ${characterName}`);
+                    
+                    // Remover efectos de muerte si el personaje revive
                     member.classList.remove('dead');
                     if (member.parentElement === this.elements.playerTeam) {
                         member.classList.add('active');
                     }
-                    statusElement.textContent = 'Estado: Normal';
+                    statusElement.textContent = '❤️ Estado: Normal';
+                    
+                    console.log(`✅ Clase 'dead' removida de ${characterName}`);
+                    console.log(`✅ Estado actualizado a '❤️ Estado: Normal'`);
+                    
+                    // Remover efectos visuales de muerte
+                    member.style.filter = 'none';
+                    member.style.opacity = '1';
+                    member.style.animation = 'none';
+                    
+                    console.log(`✅ Filtro grayscale removido`);
+                    console.log(`✅ Opacidad restaurada a 1`);
+                    console.log(`✅ Animación removida`);
+                    
+                    // Remover icono de muerte
+                    const nameElement = member.querySelector('h4');
+                    if (nameElement) {
+                        nameElement.innerHTML = nameElement.textContent.replace('💀 ', '');
+                        console.log(`✅ Icono de muerte removido del nombre`);
+                    }
+                    
                     console.log(`❤️ ${characterName} marcado como vivo`);
                 }
             }
@@ -1484,6 +1693,47 @@ class SuperheroesBattle {
         } else {
             console.log(`❌ No se encontraron elementos de vida para ${characterName}`);
         }
+    }
+
+    // Función para reproducir sonido de muerte (placeholder)
+    playDeathSound() {
+        // Esta función puede ser implementada para reproducir un sonido
+        // cuando un personaje muere. Por ahora solo muestra un mensaje.
+        console.log('🔊 Reproduciendo sonido de muerte...');
+        // Aquí se podría agregar código para reproducir un archivo de audio
+    }
+
+    // Función para verificar si todos los personajes de un equipo están muertos
+    checkTeamDeath(teamMembers) {
+        const aliveMembers = Array.from(teamMembers).filter(member => 
+            !member.classList.contains('dead')
+        );
+        
+        if (aliveMembers.length === 0) {
+            console.log('💀 Todos los miembros del equipo están muertos!');
+            return true;
+        }
+        
+        return false;
+    }
+
+    // Función para mostrar efectos de victoria/derrota cuando un equipo muere
+    showTeamDeathEffects(isPlayerTeam) {
+        const teamName = isPlayerTeam ? 'Tu equipo' : 'El equipo enemigo';
+        const message = isPlayerTeam ? 
+            '💀 ¡Tu equipo ha sido derrotado!' : 
+            '🏆 ¡Has derrotado al equipo enemigo!';
+        
+        this.addLogEntry(message, isPlayerTeam ? 'error' : 'success');
+        
+        // Agregar efectos visuales al equipo derrotado
+        const teamContainer = isPlayerTeam ? this.elements.playerTeam : this.elements.enemyTeam;
+        teamContainer.style.animation = 'teamDefeat 1s ease-in-out';
+        
+        // Mostrar mensaje de victoria/derrota
+        setTimeout(() => {
+            this.showGameMessage(message, isPlayerTeam ? 'error' : 'success');
+        }, 1000);
     }
 
     async performAttack(moveType = 'normal') {
@@ -1939,6 +2189,9 @@ class SuperheroesBattle {
         this.battleStats = {};
         this.currentTurn = 'player';
         
+        // Limpiar efectos visuales de muerte
+        this.clearDeathEffects();
+        
         // Resetear botones
         this.elements.startBtn1v1.disabled = false;
         this.elements.startBtn1v1.textContent = '⚔️ Batalla 1v1';
@@ -1965,6 +2218,40 @@ class SuperheroesBattle {
         // Limpiar selecciones
         document.querySelectorAll('.move-btn').forEach(btn => btn.classList.remove('selected'));
         this.updateTeamDisplay();
+    }
+
+    // Función para limpiar efectos visuales de muerte
+    clearDeathEffects() {
+        // Limpiar efectos de todos los personajes
+        const allMembers = document.querySelectorAll('.team-member');
+        allMembers.forEach(member => {
+            // Remover clases de muerte
+            member.classList.remove('dead', 'defeated');
+            member.classList.add('active');
+            
+            // Limpiar estilos inline
+            member.style.filter = 'none';
+            member.style.opacity = '1';
+            member.style.animation = 'none';
+            
+            // Limpiar iconos de muerte del nombre
+            const nameElement = member.querySelector('h4');
+            if (nameElement) {
+                nameElement.innerHTML = nameElement.textContent.replace('💀 ', '');
+            }
+            
+            // Actualizar estado
+            const statusElement = member.querySelector('.status');
+            if (statusElement) {
+                statusElement.textContent = '❤️ Estado: Normal';
+            }
+        });
+        
+        // Limpiar efectos de equipos
+        this.elements.playerTeam.classList.remove('defeated');
+        this.elements.enemyTeam.classList.remove('defeated');
+        
+        console.log('🧹 Efectos visuales de muerte limpiados');
     }
 
     // Obtener estadísticas del juego
@@ -2034,6 +2321,91 @@ class SuperheroesBattle {
         `;
         
         document.body.appendChild(recapDiv);
+    }
+
+    // Función para mostrar notificación de muerte
+    showDeathNotification(characterName, isPlayerCharacter) {
+        // Crear notificación visual
+        const notification = document.createElement('div');
+        notification.className = 'death-notification';
+        notification.innerHTML = `
+            <div class="death-notification-content">
+                <div class="death-icon">💀</div>
+                <div class="death-text">
+                    <h3>${characterName}</h3>
+                    <p>${isPlayerCharacter ? 'Tu personaje ha muerto!' : 'El enemigo ha muerto!'}</p>
+                </div>
+            </div>
+        `;
+        
+        // Agregar estilos inline para la notificación
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #742a2a, #c53030);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 1000;
+            animation: deathNotification 2s ease-in-out;
+            text-align: center;
+            min-width: 300px;
+        `;
+        
+        // Agregar al DOM
+        document.body.appendChild(notification);
+        
+        // Remover después de 2 segundos
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 2000);
+        
+        console.log(`💀 Notificación de muerte mostrada para: ${characterName}`);
+    }
+
+    // Función para reproducir sonido de muerte (placeholder)
+    playDeathSound() {
+        // Esta función puede ser implementada para reproducir un sonido
+        // cuando un personaje muere. Por ahora solo muestra un mensaje.
+        console.log('🔊 Reproduciendo sonido de muerte...');
+        // Aquí se podría agregar código para reproducir un archivo de audio
+        // Ejemplo:
+        // const audio = new Audio('death-sound.mp3');
+        // audio.play();
+    }
+
+    // Función de prueba para simular muerte de personajes (solo para debugging)
+    testDeathEffects() {
+        console.log('🧪 Probando efectos de muerte...');
+        
+        // Buscar el primer personaje del equipo jugador
+        const playerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
+        if (playerMembers.length > 0) {
+            const testMember = playerMembers[0];
+            const nameElement = testMember.querySelector('h4');
+            if (nameElement) {
+                const characterName = nameElement.textContent.trim();
+                console.log(`🧪 Simulando muerte de: ${characterName}`);
+                this.updateCharacterHealth(characterName, 0);
+            }
+        }
+        
+        // Buscar el primer personaje del equipo enemigo
+        const enemyMembers = this.elements.enemyTeam.querySelectorAll('.team-member');
+        if (enemyMembers.length > 0) {
+            const testMember = enemyMembers[0];
+            const nameElement = testMember.querySelector('h4');
+            if (nameElement) {
+                const characterName = nameElement.textContent.trim();
+                console.log(`🧪 Simulando muerte de: ${characterName}`);
+                this.updateCharacterHealth(characterName, 0);
+            }
+        }
     }
 }
 
