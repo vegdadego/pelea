@@ -14,18 +14,27 @@ class BattleService {
             nombre: char.nombre,
             alias: char.alias,
             tipo: char.tipo,
-            hp: Number(char.stats.health) || 100,
-            maxHp: Number(char.stats.maxHealth) || 100,
-            ataque_normal: (char.attacks && char.attacks[0] && Number(char.attacks[0].baseDamage)) || 10,
-            ataque_especial: (char.attacks && char.attacks[1] && Number(char.attacks[1].baseDamage)) || 20,
-            escudo: Number(char.stats.defense) || 20,
-            escudoUsado: false
+            currentHealth: Number(char.stats.health) || 100,
+            maxHealth: Number(char.stats.maxHealth) || 100,
+            attack: Number(char.stats.attack) || 10,
+            defense: Number(char.stats.defense) || 20,
+            specialAttack: Number(char.stats.specialAttack) || Number(char.stats.attack) || 10,
+            specialDefense: Number(char.stats.specialDefense) || Number(char.stats.defense) || 20,
+            isAlive: true,
+            attacks: char.attacks || []
         });
+        // Crear estados iniciales de los personajes
+        const characterStates = [
+            getCharState(char1),
+            getCharState(char2)
+        ];
+        
         const battleDoc = new Battle({
             userId,
             type: '1v1',
             char1: getCharState(char1),
             char2: getCharState(char2),
+            currentCharacterStates: characterStates,
             rounds: [],
             currentRound: 0,
             isFinished: false,
@@ -49,15 +58,21 @@ class BattleService {
             nombre: char.nombre,
             alias: char.alias,
             tipo: char.tipo,
-            hp: Number(char.stats.health) || 100,
-            maxHp: Number(char.stats.maxHealth) || 100,
-            ataque_normal: (char.attacks && char.attacks[0] && Number(char.attacks[0].baseDamage)) || 10,
-            ataque_especial: (char.attacks && char.attacks[1] && Number(char.attacks[1].baseDamage)) || 20,
-            escudo: Number(char.stats.defense) || 20,
-            escudoUsado: false
+            currentHealth: Number(char.stats.health) || 100,
+            maxHealth: Number(char.stats.maxHealth) || 100,
+            attack: Number(char.stats.attack) || 10,
+            defense: Number(char.stats.defense) || 20,
+            specialAttack: Number(char.stats.specialAttack) || Number(char.stats.attack) || 10,
+            specialDefense: Number(char.stats.specialDefense) || Number(char.stats.defense) || 20,
+            isAlive: true,
+            attacks: char.attacks || []
         });
         const miembros1 = equipo1.miembros.map(id => getCharState(personajes.find(p => p.id === id)));
         const miembros2 = equipo2.miembros.map(id => getCharState(personajes.find(p => p.id === id)));
+        
+        // Crear estados iniciales de los personajes
+        const characterStates = [...miembros1, ...miembros2];
+        
         const battleDoc = new Battle({
             userId,
             type: '3v3',
@@ -71,6 +86,7 @@ class BattleService {
                 nombre: equipo2.nombre,
                 miembros: miembros2
             },
+            currentCharacterStates: characterStates,
             rounds: [],
             currentRound: 0,
             isFinished: false,

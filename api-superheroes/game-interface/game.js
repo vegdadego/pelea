@@ -961,11 +961,29 @@ class SuperheroesBattle {
         const hero1CurrentHp = hero1.isAlive === false ? 0 : (hero1.currentHealth || hero1.hp || hero1.health || 100);
         const hero1MaxHp = hero1.maxHp || hero1.maxHealth || 100;
         const hero1HealthPercentage = (hero1CurrentHp / hero1MaxHp) * 100;
+        
+        console.log('📊 Hero1 datos:', {
+            nombre: hero1.nombre,
+            currentHealth: hero1.currentHealth,
+            isAlive: hero1.isAlive,
+            calculatedHp: hero1CurrentHp,
+            maxHp: hero1MaxHp,
+            percentage: hero1HealthPercentage
+        });
 
         // Calcular vida para hero2
         const hero2CurrentHp = hero2.isAlive === false ? 0 : (hero2.currentHealth || hero2.hp || hero2.health || 100);
         const hero2MaxHp = hero2.maxHp || hero2.maxHealth || 100;
         const hero2HealthPercentage = (hero2CurrentHp / hero2MaxHp) * 100;
+        
+        console.log('📊 Hero2 datos:', {
+            nombre: hero2.nombre,
+            currentHealth: hero2.currentHealth,
+            isAlive: hero2.isAlive,
+            calculatedHp: hero2CurrentHp,
+            maxHp: hero2MaxHp,
+            percentage: hero2HealthPercentage
+        });
 
         this.elements.playerTeam.innerHTML = `
             <div class="team-member ${hero1.isAlive === false ? 'dead' : 'active'}">
@@ -1049,6 +1067,15 @@ class SuperheroesBattle {
             const isAlive = hero.isAlive !== false && currentHp > 0;
             const healthPercentage = (currentHp / maxHp) * 100;
             
+            console.log('📊 Team1 Hero datos:', {
+                nombre: hero.nombre,
+                currentHealth: hero.currentHealth,
+                isAlive: hero.isAlive,
+                calculatedHp: currentHp,
+                maxHp: maxHp,
+                percentage: healthPercentage
+            });
+            
             return `
                 <div class="team-member ${isAlive ? 'active' : 'dead'}">
                     <h4>${hero.alias || hero.nombre}</h4>
@@ -1066,6 +1093,15 @@ class SuperheroesBattle {
             const currentHp = hero.isAlive === false ? 0 : (hero.currentHealth || hero.hp || hero.health || 100);
             const isAlive = hero.isAlive !== false && currentHp > 0;
             const healthPercentage = (currentHp / maxHp) * 100;
+            
+            console.log('📊 Team2 Hero datos:', {
+                nombre: hero.nombre,
+                currentHealth: hero.currentHealth,
+                isAlive: hero.isAlive,
+                calculatedHp: currentHp,
+                maxHp: maxHp,
+                percentage: healthPercentage
+            });
             
             return `
                 <div class="team-member ${isAlive ? '' : 'dead'}">
@@ -1126,27 +1162,58 @@ class SuperheroesBattle {
             const playerMember = this.elements.playerTeam.querySelector('.team-member');
             const enemyMember = this.elements.enemyTeam.querySelector('.team-member');
             
-            if (playerMember) {
+            // Verificar estado del personaje jugador usando datos del estado de batalla
+            const charStates = this.currentBattleState.characterStates || [];
+            const hero1 = this.currentBattleState.hero1 || this.currentBattleState.char1;
+            const playerState = charStates.find(c => c.id === hero1?.id);
+            const playerIsAlive = playerState ? (playerState.isAlive !== false && playerState.currentHealth > 0) : true;
+            
+            if (playerMember && !playerMember.classList.contains('dead') && playerIsAlive) {
                 playerMember.classList.add('selectable');
                 playerMember.addEventListener('click', () => this.selectAttacker(0));
             }
             
-            if (enemyMember) {
+            // Verificar estado del personaje enemigo usando datos del estado de batalla
+            const hero2 = this.currentBattleState.hero2 || this.currentBattleState.char2;
+            const enemyState = charStates.find(c => c.id === hero2?.id);
+            const enemyIsAlive = enemyState ? (enemyState.isAlive !== false && enemyState.currentHealth > 0) : true;
+            
+            if (enemyMember && !enemyMember.classList.contains('dead') && enemyIsAlive) {
                 enemyMember.classList.add('selectable');
                 enemyMember.addEventListener('click', () => this.selectTarget(0));
             }
         } else {
             // Para 3v3, agregar listeners a todos los miembros del equipo
             const playerMembers = this.elements.playerTeam.querySelectorAll('.team-member');
+            const team1Ids = this.currentBattleState.equipo1?.miembros || [];
+            
             playerMembers.forEach((member, index) => {
-                member.classList.add('selectable');
-                member.addEventListener('click', () => this.selectAttacker(index));
+                // Verificar estado del personaje usando datos del estado de batalla
+                const charId = team1Ids[index];
+                const charState = charStates.find(c => c.id === charId);
+                const isAlive = charState ? (charState.isAlive !== false && charState.currentHealth > 0) : true;
+                
+                // Solo hacer selectable si no está muerto (tanto en CSS como en datos)
+                if (!member.classList.contains('dead') && isAlive) {
+                    member.classList.add('selectable');
+                    member.addEventListener('click', () => this.selectAttacker(index));
+                }
             });
 
             const enemyMembers = this.elements.enemyTeam.querySelectorAll('.team-member');
+            const team2Ids = this.currentBattleState.equipo2?.miembros || [];
+            
             enemyMembers.forEach((member, index) => {
-                member.classList.add('selectable');
-                member.addEventListener('click', () => this.selectTarget(index));
+                // Verificar estado del personaje usando datos del estado de batalla
+                const charId = team2Ids[index];
+                const charState = charStates.find(c => c.id === charId);
+                const isAlive = charState ? (charState.isAlive !== false && charState.currentHealth > 0) : true;
+                
+                // Solo hacer selectable si no está muerto (tanto en CSS como en datos)
+                if (!member.classList.contains('dead') && isAlive) {
+                    member.classList.add('selectable');
+                    member.addEventListener('click', () => this.selectTarget(index));
+                }
             });
         }
     }
@@ -1182,14 +1249,34 @@ class SuperheroesBattle {
 
         if (!attacker) {
             console.error(`❌ No se pudo encontrar el atacante con ID ${attackerId}`);
+            this.addLogEntry('❌ Error: No se pudo encontrar el personaje atacante', 'error');
             return;
         }
 
-        // Verificar que el personaje esté vivo
-        const currentHp = attacker.hp || attacker.health || 100;
-        if (currentHp <= 0) {
-            this.addLogEntry('❌ No puedes seleccionar un personaje muerto como atacante', 'error');
-            return;
+        // Verificar que el personaje esté vivo usando datos actualizados del estado de batalla
+        const charStates = this.currentBattleState.characterStates || [];
+        const currentCharState = charStates.find(c => c.id === attackerId);
+        
+        if (currentCharState) {
+            // Usar datos del estado de batalla (más confiable)
+            const isAlive = currentCharState.isAlive !== false;
+            const currentHp = currentCharState.currentHealth || 0;
+            
+            if (!isAlive || currentHp <= 0) {
+                const characterName = attacker.alias || attacker.nombre || 'Personaje';
+                this.addLogEntry(`💀 ${characterName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
+                this.showGameMessage(`${characterName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
+                return;
+            }
+        } else {
+            // Fallback: verificar datos del personaje base
+            const currentHp = attacker.hp || attacker.health || attacker.currentHealth || 100;
+            if (currentHp <= 0) {
+                const characterName = attacker.alias || attacker.nombre || 'Personaje';
+                this.addLogEntry(`💀 ${characterName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
+                this.showGameMessage(`${characterName} está muerto y no puede atacar. Selecciona otro personaje.`, 'error');
+                return;
+            }
         }
 
         this.selectedAttacker = attacker;
@@ -1220,14 +1307,34 @@ class SuperheroesBattle {
 
         if (!target) {
             console.error(`❌ No se pudo encontrar el objetivo con ID ${targetId}`);
+            this.addLogEntry('❌ Error: No se pudo encontrar el personaje objetivo', 'error');
             return;
         }
 
-        // Verificar que el personaje esté vivo
-        const currentHp = target.hp || target.health || 100;
-        if (currentHp <= 0) {
-            this.addLogEntry('❌ No puedes seleccionar un personaje muerto como objetivo', 'error');
-            return;
+        // Verificar que el personaje esté vivo usando datos actualizados del estado de batalla
+        const charStates = this.currentBattleState.characterStates || [];
+        const currentCharState = charStates.find(c => c.id === targetId);
+        
+        if (currentCharState) {
+            // Usar datos del estado de batalla (más confiable)
+            const isAlive = currentCharState.isAlive !== false;
+            const currentHp = currentCharState.currentHealth || 0;
+            
+            if (!isAlive || currentHp <= 0) {
+                const characterName = target.alias || target.nombre || 'Personaje';
+                this.addLogEntry(`💀 ${characterName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
+                this.showGameMessage(`${characterName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
+                return;
+            }
+        } else {
+            // Fallback: verificar datos del personaje base
+            const currentHp = target.hp || target.health || target.currentHealth || 100;
+            if (currentHp <= 0) {
+                const characterName = target.alias || target.nombre || 'Personaje';
+                this.addLogEntry(`💀 ${characterName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
+                this.showGameMessage(`${characterName} está muerto y no puede ser atacado. Selecciona otro objetivo.`, 'error');
+                return;
+            }
         }
 
         this.selectedTarget = target;
@@ -1468,12 +1575,21 @@ class SuperheroesBattle {
                 if (newHp <= 0) {
                     member.classList.add('dead');
                     member.classList.remove('active');
+                    member.classList.remove('selectable');
                     statusElement.textContent = 'Estado: Muerto';
                     console.log(`💀 ${characterName} marcado como muerto`);
+                    
+                    // Mostrar mensaje al usuario
+                    this.addLogEntry(`💀 ${characterName} ha muerto en batalla`, 'error');
+                    this.showGameMessage(`${characterName} ha muerto en batalla`, 'error');
                 } else {
                     member.classList.remove('dead');
                     if (member.parentElement === this.elements.playerTeam) {
                         member.classList.add('active');
+                    }
+                    // Solo hacer selectable si no está muerto
+                    if (this.isManualSelectionEnabled) {
+                        member.classList.add('selectable');
                     }
                     statusElement.textContent = 'Estado: Normal';
                     console.log(`❤️ ${characterName} marcado como vivo`);
@@ -1487,6 +1603,62 @@ class SuperheroesBattle {
     }
 
     async performAttack(moveType = 'normal') {
+        // Validar que los personajes seleccionados estén vivos
+        if (!this.selectedAttacker || !this.selectedTarget) {
+            this.addLogEntry('❌ Debes seleccionar un atacante y un objetivo antes de atacar', 'error');
+            this.showGameMessage('Debes seleccionar un atacante y un objetivo antes de atacar', 'error');
+            return;
+        }
+
+        // Verificar que el atacante esté vivo usando datos actualizados del estado de batalla
+        const charStates = this.currentBattleState.characterStates || [];
+        const attackerState = charStates.find(c => c.id === this.selectedAttacker.id);
+        
+        if (attackerState) {
+            const attackerIsAlive = attackerState.isAlive !== false;
+            const attackerHp = attackerState.currentHealth || 0;
+            
+            if (!attackerIsAlive || attackerHp <= 0) {
+                const attackerName = this.selectedAttacker.alias || this.selectedAttacker.nombre || 'Atacante';
+                this.addLogEntry(`💀 ${attackerName} está muerto y no puede atacar`, 'error');
+                this.showGameMessage(`${attackerName} está muerto y no puede atacar`, 'error');
+                return;
+            }
+        } else {
+            // Fallback: verificar datos del personaje base
+            const attackerHp = this.selectedAttacker.hp || this.selectedAttacker.health || this.selectedAttacker.currentHealth || 100;
+            if (attackerHp <= 0) {
+                const attackerName = this.selectedAttacker.alias || this.selectedAttacker.nombre || 'Atacante';
+                this.addLogEntry(`💀 ${attackerName} está muerto y no puede atacar`, 'error');
+                this.showGameMessage(`${attackerName} está muerto y no puede atacar`, 'error');
+                return;
+            }
+        }
+
+        // Verificar que el objetivo esté vivo usando datos actualizados del estado de batalla
+        const targetState = charStates.find(c => c.id === this.selectedTarget.id);
+        
+        if (targetState) {
+            const targetIsAlive = targetState.isAlive !== false;
+            const targetHp = targetState.currentHealth || 0;
+            
+            if (!targetIsAlive || targetHp <= 0) {
+                const targetName = this.selectedTarget.alias || this.selectedTarget.nombre || 'Objetivo';
+                this.addLogEntry(`💀 ${targetName} está muerto y no puede ser atacado`, 'error');
+                this.showGameMessage(`${targetName} está muerto y no puede ser atacado`, 'error');
+                return;
+            }
+        } else {
+            // Fallback: verificar datos del personaje base
+            const targetHp = this.selectedTarget.hp || this.selectedTarget.health || this.selectedTarget.currentHealth || 100;
+            if (targetHp <= 0) {
+                const targetName = this.selectedTarget.alias || this.selectedTarget.nombre || 'Objetivo';
+                this.addLogEntry(`💀 ${targetName} está muerto y no puede ser atacado`, 'error');
+                this.showGameMessage(`${targetName} está muerto y no puede ser atacado`, 'error');
+                return;
+            }
+        }
+
         // Deshabilitar selección manual mientras se procesa el ataque
         this.isManualSelectionEnabled = false;
         this.elements.attackBtn.disabled = true;
@@ -1551,6 +1723,22 @@ class SuperheroesBattle {
             console.log('🚀 Ejecutando ataque...');
             const attackData = await this.apiCall('/battles/action', 'POST', actionPayload);
             console.log('📊 Datos de ataque recibidos:', attackData);
+            console.log('🔍 Verificando battleState en la respuesta...');
+            console.log('📊 battleState presente:', !!attackData.battleState);
+            if (attackData.battleState) {
+                console.log('📊 battleState completo:', attackData.battleState);
+                console.log('📊 characterStates:', attackData.battleState.characterStates);
+                if (attackData.battleState.characterStates) {
+                    attackData.battleState.characterStates.forEach((char, index) => {
+                        console.log(`📊 Personaje ${index + 1}:`, {
+                            id: char.id,
+                            nombre: char.nombre,
+                            currentHealth: char.currentHealth,
+                            isAlive: char.isAlive
+                        });
+                    });
+                }
+            }
 
             // Mostrar información del round
             this.displayRoundInfo(attackData);
@@ -1569,35 +1757,15 @@ class SuperheroesBattle {
                 
                 console.log('✅ UI actualizada con el estado del backend');
             } else {
-                console.log('⚠️ No se recibió battleState del backend, usando parsing de mensajes...');
+                console.log('⚠️ No se recibió battleState del backend, recargando estado completo...');
                 
-                // Fallback: Parsear y actualizar vida de los personajes desde los mensajes
-                console.log('🔍 Procesando mensaje del jugador:', attackData.turnoJugador);
-                if (attackData.turnoJugador) {
-                    const jugadorHp = this.parseHpFromMessage(attackData.turnoJugador);
-                    console.log('📊 Datos extraídos del jugador:', jugadorHp);
-                    if (jugadorHp) {
-                        console.log(`🎯 Actualizando vida del jugador: ${jugadorHp.characterName} -> ${jugadorHp.currentHp} HP`);
-                        this.updateCharacterHealth(jugadorHp.characterName, jugadorHp.currentHp);
-                    } else {
-                        console.log('❌ No se pudieron extraer datos del jugador del mensaje');
-                    }
-                } else {
-                    console.log('⚠️ No hay mensaje del jugador en la respuesta');
-                }
-
-                console.log('🔍 Procesando mensaje del enemigo:', attackData.turnoEnemigo);
-                if (attackData.turnoEnemigo) {
-                    const enemigoHp = this.parseHpFromMessage(attackData.turnoEnemigo);
-                    console.log('📊 Datos extraídos del enemigo:', enemigoHp);
-                    if (enemigoHp) {
-                        console.log(`🎯 Actualizando vida del enemigo: ${enemigoHp.characterName} -> ${enemigoHp.currentHp} HP`);
-                        this.updateCharacterHealth(enemigoHp.characterName, enemigoHp.currentHp);
-                    } else {
-                        console.log('❌ No se pudieron extraer datos del enemigo del mensaje');
-                    }
-                } else {
-                    console.log('⚠️ No hay mensaje del enemigo en la respuesta');
+                // En lugar de usar parsing de mensajes, recargar el estado completo desde el servidor
+                try {
+                    await this.loadBattleState();
+                    console.log('✅ Estado de batalla recargado desde el servidor');
+                } catch (error) {
+                    console.error('❌ Error al recargar estado de batalla:', error);
+                    this.showGameMessage('Error al actualizar estado de batalla', 'error');
                 }
             }
 
